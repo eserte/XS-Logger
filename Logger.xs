@@ -50,7 +50,8 @@ PREINIT:
 CODE:
 {
 
-	mylogger = malloc(sizeof(MyLogger)); /* malloc our object */
+	/* mylogger = malloc(sizeof(MyLogger)); */ /* malloc our object */
+	Newxz( mylogger, 1, MyLogger);
 	RETVAL = newSViv(0);
 	obj = newSVrv(RETVAL, class); /* bless our object */
 
@@ -58,21 +59,16 @@ CODE:
 		opts = (HV*) SvRV( (SV*) ST(1));
 	}
 	if ( opts ) {
-		mylogger->x = 0;
 		if ( hv_existss( opts, "x" ) ) {
 			if ( svp = hv_fetchs(opts, "x", FALSE) ) {
 				mylogger->x =  SvIV(*svp);
 			}
 		}
-		mylogger->y = 0;
 		if ( hv_existss( opts, "y" ) ) {
 			if ( svp = hv_fetchs(opts, "y", FALSE) ) {
 				mylogger->y =  SvIV(*svp);
 			}
 		}
-	} else {
-		mylogger->x = 0;
-		mylogger->y = 0;
 	}
 
 	/* ... */
