@@ -22,8 +22,8 @@ typedef enum {
 		LOG_DEBUG, /* 0 */
 		LOG_INFO,  /* 1 */
 		LOG_WARN,  /* 2 */
-		LOG_ERROR, /* 3 */
-		LOG_FATAL  /* 4 */
+		LOG_ERROR, /* 3 or also DIE */
+		LOG_FATAL  /* 4 or also PANIC */
 } logLevel;
 
 typedef struct {
@@ -110,12 +110,57 @@ OUTPUT:
 
 
 SV*
+xlog_loggers(self)
+     SV* self
+ALIAS:
+	    XS::Logger::info                 = 1
+	    XS::Logger::warn                 = 2
+	    XS::Logger::error                = 3
+	    XS::Logger::die                  = 4
+	    XS::Logger::panic                = 5
+	    XS::Logger::fatal                = 6
+	    XS::Logger::debug                = 7
+PREINIT:
+     	SV *ret;
+CODE:
+{
+     logLevel level = 0;
+     switch (ix) {
+         case 1: /* info */
+             level = LOG_INFO;
+         break;
+         case 2: /* warn */
+             level = LOG_WARN;
+         break;
+         case 3: /* error */
+         case 4: /* die */
+            level = LOG_ERROR;
+         break;
+         case 5: /* panic */
+         case 6: /* fatal */
+            level = LOG_FATAL;
+         break;
+         case 7:
+            level = LOG_DEBUG;
+         break;
+         default:
+             level = 0;
+
+     }
+
+     RETVAL = newSViv( level );
+}
+OUTPUT:
+	RETVAL
+
+
+SV*
 xlog_helpers()
      ALIAS:
-     XS::Logger::info                 = 1
-     XS::Logger::warn                 = 2
-     XS::Logger::die                  = 3
-     XS::Logger::panic                = 4
+     XS::Logger::xinfo                 = 1
+     XS::Logger::xwarn                 = 2
+     XS::Logger::xdie                  = 3
+     XS::Logger::xpanic                = 4
 PREINIT:
      SV *ret;
 CODE:

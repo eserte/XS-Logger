@@ -1,5 +1,3 @@
-# $Id: 1compile.t,v 1.2 2003/06/16 02:09:01 ian Exp $
-
 # compile.t
 #
 # Ensure the module compiles.
@@ -16,10 +14,10 @@ BEGIN { use_ok('XS::Logger') }
 
     is XS::Logger::helpers(), 0;
 
-    is XS::Logger::info(),  10,  "info";
-    is XS::Logger::warn(),  20,  "warn";
-    is XS::Logger::die(),   303, "die";
-    is XS::Logger::panic(), 404, "panic";
+    is XS::Logger::xinfo(),  10,  "info";
+    is XS::Logger::xwarn(),  20,  "warn";
+    is XS::Logger::xdie(),   303, "die";
+    is XS::Logger::xpanic(), 404, "panic";
 }
 
 done_testing;
