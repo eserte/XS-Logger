@@ -63,14 +63,28 @@ OUTPUT:
 	RETVAL
 
 SV*
-xlog_get_x(self)
+xlog_getters(self)
     SV* self
+ALIAS:
+     XS::Logger::get_x                 = 1
+     XS::Logger::get_y                 = 2
 PREINIT:
 	MyLogger* mylogger;
 CODE:
 {
 	mylogger = INT2PTR(MyLogger*, SvIV(SvRV(self)));
-	RETVAL = newSViv( mylogger->x );
+     int i = 0;
+     switch (ix) {
+         case 1:
+             RETVAL = newSViv( mylogger->x );
+         break;
+         case 2:
+             RETVAL = newSViv( mylogger->y );
+         break;
+         default:
+             XSRETURN_EMPTY;
+
+     }
 }
 OUTPUT:
 	RETVAL
