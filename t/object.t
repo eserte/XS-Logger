@@ -16,20 +16,39 @@ use XS::Logger;
     ok 1;
 
     {
-        my $logger = XS::Logger->new( 1, 2 );
+        my $logger = XS::Logger->new( { x => 1, y => 2 } );
         isa_ok $logger, 'XS::Logger';
         is $logger->get_x(), 1, "get_x";
         is $logger->get_y(), 2, "get_y";
 
         undef $logger;    # trigger destroy
         is $logger, undef;
-        $logger = XS::Logger->new( 4, 5 );
+        $logger = XS::Logger->new( { x => 4 } );
         isa_ok $logger, 'XS::Logger';
         is $logger->get_x(), 4, "get_x";
-        is $logger->get_y(), 5, "get_y";
+        is $logger->get_y(), 0, "get_y";
+
+        $logger = XS::Logger->new( { y => 42 } );
+        isa_ok $logger, 'XS::Logger';
+        is $logger->get_x(), 0,  "get_x";
+        is $logger->get_y(), 42, "get_y";
+
+        $logger = XS::Logger->new();
+        isa_ok $logger, 'XS::Logger';
+        is $logger->get_x(), 0, "get_x";
+        is $logger->get_y(), 0, "get_y";
+
     }
 
 }
 
 done_testing;
 __END__
+
+
+             if(hv_exists(seen, SvPVX(keysv), SvCUR(keysv)))
+                 continue;
+
+             hv_store(seen, SvPVX(keysv), SvCUR(keysv), &PL_sv_undef, 0);
+
+90:                s = hv_fetchs((HV *) SvRV(hv), "hv_fetchs", 0);

@@ -40,24 +40,45 @@ typedef struct {
 MODULE = XS__Logger    PACKAGE = XS::Logger PREFIX = xlog_
 
 SV*
-xlog_new(class, x, y)
+xlog_new(class, ...)
     char* class
-    int x
-    int y
 PREINIT:
 	    MyLogger* mylogger;
 	    SV*            obj;
+	    HV*           opts = NULL;
+	    SV **svp;
 CODE:
 {
-	    mylogger = malloc(sizeof(MyLogger)); /* malloc our object */
-	    RETVAL = newSViv(0);
-	    obj = newSVrv(RETVAL, class); /* bless our object */
-	    mylogger->x = x;
-	    mylogger->y = y;
-	    /* ... */
 
-	    sv_setiv(obj, PTR2IV(mylogger)); /* get a pointer to our malloc object */
-	    SvREADONLY_on(obj);
+	mylogger = malloc(sizeof(MyLogger)); /* malloc our object */
+	RETVAL = newSViv(0);
+	obj = newSVrv(RETVAL, class); /* bless our object */
+
+	if( items > 1 ) { /* could also probably use va_start, va_list, ... */
+		opts = (HV*) SvRV( (SV*) ST(1));
+	}
+	if ( opts ) {
+		mylogger->x = 0;
+		if ( hv_existss( opts, "x" ) ) {
+			if ( svp = hv_fetchs(opts, "x", FALSE) ) {
+				mylogger->x =  SvIV(*svp);
+			}
+		}
+		mylogger->y = 0;
+		if ( hv_existss( opts, "y" ) ) {
+			if ( svp = hv_fetchs(opts, "y", FALSE) ) {
+				mylogger->y =  SvIV(*svp);
+			}
+		}
+	} else {
+		mylogger->x = 0;
+		mylogger->y = 0;
+	}
+
+	/* ... */
+
+	sv_setiv(obj, PTR2IV(mylogger)); /* get a pointer to our malloc object */
+	SvREADONLY_on(obj);
 }
 OUTPUT:
 	RETVAL
