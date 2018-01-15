@@ -7,7 +7,6 @@
 use strict;
 use Test::More;
 
-# make sure the module compiles
 use XS::Logger;
 
 # make sure holy() is in the current namespace

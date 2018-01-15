@@ -62,25 +62,6 @@ CODE:
 OUTPUT:
 	RETVAL
 
-void DESTROY(obj)
-    SV* obj
-PREINIT:
-	    I32* temp;
-	    MyLogger* mylogger;
-PPCODE:
-{
-	    temp = PL_markstack_ptr++;
-	    mylogger = INT2PTR(MyLogger*, SvIV(SvRV(obj)));
-	    free(mylogger);
-	    if (PL_markstack_ptr != temp) {
-	        /* truly void, because dXSARGS not invoked */
-	        PL_markstack_ptr = temp;
-	        XSRETURN_EMPTY;
-	        /* return empty stack */
-	    }  /* must have used dXSARGS; list context implied */
-	    return;  /* assume stack size is correct */
-}
-
 
 SV*
 xlog_helpers()
@@ -109,6 +90,25 @@ CODE:
 }
 OUTPUT:
 	RETVAL
+
+void DESTROY(obj)
+    SV* obj
+PREINIT:
+	    I32* temp;
+	    MyLogger* mylogger;
+PPCODE:
+{
+	    temp = PL_markstack_ptr++;
+	    mylogger = INT2PTR(MyLogger*, SvIV(SvRV(obj)));
+	    free(mylogger);
+	    if (PL_markstack_ptr != temp) {
+	        /* truly void, because dXSARGS not invoked */
+	        PL_markstack_ptr = temp;
+	        XSRETURN_EMPTY;
+	        /* return empty stack */
+	    }  /* must have used dXSARGS; list context implied */
+	    return;  /* assume stack size is correct */
+}
 
 BOOT:
 {
