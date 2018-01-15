@@ -56,7 +56,9 @@ CODE:
 	obj = newSVrv(RETVAL, class); /* bless our object */
 
 	if( items > 1 ) { /* could also probably use va_start, va_list, ... */
-		opts = (HV*) SvRV( (SV*) ST(1));
+		SV *extra = (SV*) ST(1);
+		if ( SvROK(extra) && SvTYPE(SvRV(extra)) == SVt_PVHV )
+			opts = (HV*) SvRV( extra );
 	}
 	if ( opts ) {
 		if ( hv_existss( opts, "x" ) ) {
