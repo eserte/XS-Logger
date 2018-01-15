@@ -1,0 +1,7 @@
+Logger.bs
+blib/
+MYMETA.*
+Logger.c
+Makefile
+pm_to_blib
+*.o
