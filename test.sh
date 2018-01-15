@@ -6,6 +6,5 @@ rm -rf blib
 
 set -e
 perl Makefile.PL
-# WTF??
-PERL_HASH_SEED=1 make
+make
 make test
