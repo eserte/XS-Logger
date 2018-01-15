@@ -62,6 +62,19 @@ CODE:
 OUTPUT:
 	RETVAL
 
+SV*
+xlog_get_x(self)
+    SV* self
+PREINIT:
+	MyLogger* mylogger;
+CODE:
+{
+	mylogger = INT2PTR(MyLogger*, SvIV(SvRV(self)));
+	RETVAL = newSViv( mylogger->x );
+}
+OUTPUT:
+	RETVAL
+
 
 SV*
 xlog_helpers()

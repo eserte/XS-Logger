@@ -18,31 +18,16 @@ use XS::Logger;
     {
         my $logger = XS::Logger->new( 1, 2 );
         isa_ok $logger, 'XS::Logger';
-
-        #is $logger->get_x(), 1, "get_x";
+        is $logger->get_x(), 1, "get_x";
 
         undef $logger;    # trigger destroy
         is $logger, undef;
         $logger = XS::Logger->new( 4, 5 );
         isa_ok $logger, 'XS::Logger';
-
-        #is $logger->get_x(), 4, "get_x";
+        is $logger->get_x(), 4, "get_x";
     }
 
 }
 
 done_testing;
 __END__
-
-SV*
-xlog_get_x(self)
-    SV* self
-PREINIT:
-	MyLogger* mylogger;
-CODE:
-{
-	mylogger = INT2PTR(MyLogger*, SvIV(SvRV(self)));
-	RETVAL = newSViv( mylogger->x );
-}
-OUTPUT:
-	RETVAL
