@@ -33,7 +33,7 @@ typedef struct {
 } MyLogger;
 
 /* function prototypes */
-void do_log(MyLogger *mylogger, logLevel level);
+void do_log(MyLogger *mylogger, logLevel level, ...);
 
 
 #endif /* XS_LOGGER_H */

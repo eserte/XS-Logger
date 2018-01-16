@@ -1,16 +1,12 @@
 #define PERL_EXT_XS_LOG
 
-#define PERL_NO_GET_CONTEXT
 #include <EXTERN.h>
-#define PERLIO_NOT_STDIO 1
 #include <perl.h>
 #include <XSUB.h>
-#ifdef I_UNISTD
-#  include <unistd.h>
-#endif
-#if defined(I_FCNTL) || defined(HAS_FCNTL)
-#  include <fcntl.h>
-#endif
+#include <unistd.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <fcntl.h>
 
 #include <time.h>
 #include "logger.h"
@@ -26,7 +22,7 @@ static const char *level_colors[] = {
 
 /* c internal functions */
 void
-do_log(MyLogger *mylogger, logLevel level) {
+do_log(MyLogger *mylogger, logLevel level, ...) {
 	PerlIO *handle = NULL;
 	char path[256] = "/tmp/my-test";
 	/* Get current time */
@@ -45,6 +41,7 @@ do_log(MyLogger *mylogger, logLevel level) {
 
 	if ( mylogger ) { /* we got a mylogger pointer */
 		if ( ! mylogger->handle ) {
+			/* probably do not use PerlIO layer at all */
 			if ( (handle = PerlIO_open( path, "a" )) == NULL ) /* open in append mode */
 				croak("Failed to open file \"%s\"", path);
 			mylogger->handle = handle; /* save the handle for future reuse */
@@ -125,8 +122,8 @@ OUTPUT:
 	RETVAL
 
 
-SV*
-xlog_loggers(self)
+int
+xlog_loggers(self, ...)
      SV* self;
 ALIAS:
 	    XS::Logger::info                 = 1
@@ -177,11 +174,20 @@ CODE:
      }
 
      if (dolog) {
-     	do_log( mylogger, level );
+  		// va_list args;
+
+  		// va_start(args, self);
+  		/* (unsigned long) getpid() */
+  		// do_log( mylogger, level, args );
+  		// va_end(args);
+
+  		do_log( mylogger, level );
+
+
      }
 
 
-     RETVAL = newSViv( level );
+     RETVAL = level;
 }
 OUTPUT:
 	RETVAL
