@@ -15,7 +15,7 @@
 #include <time.h>
 #include "logger.h"
 
-
+/* some constants */
 static const char *level_names[] = {
   "DEBUG", "INFO", "WARN", "ERROR", "FATAL" /* , "DISABLE" */
 };
@@ -23,6 +23,7 @@ static const char *level_names[] = {
 static const char *level_colors[] = {
   "\x1b[94m", "\x1b[36m", "\x1b[32m", "\x1b[33m", "\x1b[31m", "\x1b[35m"
 };
+
 /* c internal functions */
 void
 do_log(MyLogger *mylogger, logLevel level) {
@@ -31,13 +32,13 @@ do_log(MyLogger *mylogger, logLevel level) {
 	/* Get current time */
   	time_t t = time(NULL);
   	struct tm *lt = localtime(&t);
-	char buf[16];
+	char buf[32];
 
 
 	if ( level == LOG_DISABLE ) /* to move earlier */
 		return;
 
-	buf[strftime(buf, sizeof(buf), "%H:%M:%S", lt)] = '\0';
+	buf[strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", lt)] = '\0';
 
 	/* Note: *mylogger can be a NULL pointer => would fall back to a GV string or a constant from .c to get the filename */
 
@@ -45,18 +46,18 @@ do_log(MyLogger *mylogger, logLevel level) {
 		if ( (handle = PerlIO_open( path, "a" )) == NULL ) /* open in append mode */
 			croak("Failed to open file \"%s\"", path);
 
-		flock( handle, LOCK_EX ); /* acquire lock */
+		/* acquire lock */
+		flock( handle, LOCK_EX );
 
-
-		// PerlIO_write( handle, "abcd\n", 5 );
-		// PerlIO_printf( handle, "Entry, File: %s\n", path);
-
+		/* write the message */
 		PerlIO_printf( handle, "%s %-5s %s:%d: ", buf, level_names[level], path, level );
-		PerlIO_write( handle, "a nessage...", 12 );
+		PerlIO_write( handle, "a message...", 12 );
 		PerlIO_write( handle, "\n", 1 );
 
 		PerlIO_flush(handle);
-		flock( handle, LOCK_UN ); /* release lock */
+		/* release lock */
+		flock( handle, LOCK_UN );
+
 		PerlIO_close( handle );
 	}
 
@@ -105,38 +106,6 @@ CODE:
 
 	sv_setiv(obj, PTR2IV(mylogger)); /* get a pointer to our malloc object */
 	SvREADONLY_on(obj);
-}
-OUTPUT:
-	RETVAL
-
-
-SV*
-xlog_getters(self)
-    SV* self;
-ALIAS:
-     XS::Logger::get_x                 = 1
-     XS::Logger::get_y                 = 2
-     XS::Logger::get_pid               = 3
-PREINIT:
-	MyLogger* mylogger;
-CODE:
-{   /* some getters: mainly used for test for now to access internals */
-	mylogger = INT2PTR(MyLogger*, SvIV(SvRV(self)));
-     int i = 0;
-     switch (ix) {
-         case 1:
-             RETVAL = newSViv( mylogger->x );
-         break;
-         case 2:
-             RETVAL = newSViv( mylogger->y );
-         break;
-        case 3:
-             RETVAL = newSViv( mylogger->pid );
-         break;
-         default:
-             XSRETURN_EMPTY;
-
-     }
 }
 OUTPUT:
 	RETVAL
@@ -199,6 +168,38 @@ CODE:
 
 
      RETVAL = newSViv( level );
+}
+OUTPUT:
+	RETVAL
+
+
+SV*
+xlog_getters(self)
+    SV* self;
+ALIAS:
+     XS::Logger::get_x                 = 1
+     XS::Logger::get_y                 = 2
+     XS::Logger::get_pid               = 3
+PREINIT:
+	MyLogger* mylogger;
+CODE:
+{   /* some getters: mainly used for test for now to access internals */
+	mylogger = INT2PTR(MyLogger*, SvIV(SvRV(self)));
+     int i = 0;
+     switch (ix) {
+         case 1:
+             RETVAL = newSViv( mylogger->x );
+         break;
+         case 2:
+             RETVAL = newSViv( mylogger->y );
+         break;
+        case 3:
+             RETVAL = newSViv( mylogger->pid );
+         break;
+         default:
+             XSRETURN_EMPTY;
+
+     }
 }
 OUTPUT:
 	RETVAL
