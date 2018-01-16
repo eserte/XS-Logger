@@ -5,7 +5,6 @@
 #define PERLIO_NOT_STDIO 1
 #include <perl.h>
 #include <XSUB.h>
-#include "logger.h"
 #ifdef I_UNISTD
 #  include <unistd.h>
 #endif
@@ -13,8 +12,56 @@
 #  include <fcntl.h>
 #endif
 
-/* c internal functions */
+#include <time.h>
+#include "logger.h"
 
+
+static const char *level_names[] = {
+  "DEBUG", "INFO", "WARN", "ERROR", "FATAL" /* , "DISABLE" */
+};
+
+static const char *level_colors[] = {
+  "\x1b[94m", "\x1b[36m", "\x1b[32m", "\x1b[33m", "\x1b[31m", "\x1b[35m"
+};
+/* c internal functions */
+void
+do_log(MyLogger *mylogger, logLevel level) {
+	PerlIO *handle = NULL;
+	char path[256] = "/tmp/my-test";
+	/* Get current time */
+  	time_t t = time(NULL);
+  	struct tm *lt = localtime(&t);
+	char buf[16];
+
+
+	if ( level == LOG_DISABLE ) /* to move earlier */
+		return;
+
+	buf[strftime(buf, sizeof(buf), "%H:%M:%S", lt)] = '\0';
+
+	/* Note: *mylogger can be a NULL pointer => would fall back to a GV string or a constant from .c to get the filename */
+
+	if ( mylogger ) { /* we got a mylogger pointer */
+		if ( (handle = PerlIO_open( path, "a" )) == NULL ) /* open in append mode */
+			croak("Failed to open file \"%s\"", path);
+
+		flock( handle, LOCK_EX ); /* acquire lock */
+
+
+		// PerlIO_write( handle, "abcd\n", 5 );
+		// PerlIO_printf( handle, "Entry, File: %s\n", path);
+
+		PerlIO_printf( handle, "%s %-5s %s:%d: ", buf, level_names[level], path, level );
+		PerlIO_write( handle, "a nessage...", 12 );
+		PerlIO_write( handle, "\n", 1 );
+
+		PerlIO_flush(handle);
+		flock( handle, LOCK_UN ); /* release lock */
+		PerlIO_close( handle );
+	}
+
+
+}
 
 /* function exposed to the module */
 /* maybe a bad idea to use a prefix */
@@ -22,7 +69,7 @@ MODULE = XS__Logger    PACKAGE = XS::Logger PREFIX = xlog_
 
 SV*
 xlog_new(class, ...)
-    char* class
+    char* class;
 PREINIT:
 	    MyLogger* mylogger;
 	    SV*            obj;
@@ -62,16 +109,18 @@ CODE:
 OUTPUT:
 	RETVAL
 
+
 SV*
 xlog_getters(self)
-    SV* self
+    SV* self;
 ALIAS:
      XS::Logger::get_x                 = 1
      XS::Logger::get_y                 = 2
+     XS::Logger::get_pid               = 3
 PREINIT:
 	MyLogger* mylogger;
 CODE:
-{
+{   /* some getters: mainly used for test for now to access internals */
 	mylogger = INT2PTR(MyLogger*, SvIV(SvRV(self)));
      int i = 0;
      switch (ix) {
@@ -80,6 +129,9 @@ CODE:
          break;
          case 2:
              RETVAL = newSViv( mylogger->y );
+         break;
+        case 3:
+             RETVAL = newSViv( mylogger->pid );
          break;
          default:
              XSRETURN_EMPTY;
@@ -92,7 +144,7 @@ OUTPUT:
 
 SV*
 xlog_loggers(self)
-     SV* self
+     SV* self;
 ALIAS:
 	    XS::Logger::info                 = 1
 	    XS::Logger::warn                 = 2
@@ -105,7 +157,10 @@ PREINIT:
      	SV *ret;
 CODE:
 {
-     logLevel level = 0;
+     logLevel level = LOG_DISABLE;
+     bool dolog = true;
+     MyLogger* mylogger = NULL; /* can be null when not called on an object */
+
      switch (ix) {
          case 1: /* info */
              level = LOG_INFO;
@@ -125,9 +180,23 @@ CODE:
             level = LOG_DEBUG;
          break;
          default:
-             level = 0;
+            level = LOG_DISABLE; /* maybe use LOG_DISABLE there */
 
      }
+
+     /* call the logger function */
+     /* check the caller level */
+     if ( self && SvROK(self) && SvOBJECT(SvRV(self)) ) { /* check if self is an object */
+     	mylogger = INT2PTR(MyLogger*, SvIV(SvRV(self)));
+
+     	if ( level < mylogger->level )
+     		dolog = false;
+     }
+
+     if (dolog) {
+     	do_log( mylogger, level );
+     }
+
 
      RETVAL = newSViv( level );
 }
@@ -163,15 +232,15 @@ CODE:
 OUTPUT:
 	RETVAL
 
-void DESTROY(obj)
-    SV* obj
+void DESTROY(self)
+    SV* self;
 PREINIT:
 	    I32* temp;
 	    MyLogger* mylogger;
 PPCODE:
 {
 	    temp = PL_markstack_ptr++;
-	    mylogger = INT2PTR(MyLogger*, SvIV(SvRV(obj)));
+	    mylogger = INT2PTR(MyLogger*, SvIV(SvRV(self)));
 	    free(mylogger);
 	    if (PL_markstack_ptr != temp) {
 	        /* truly void, because dXSARGS not invoked */

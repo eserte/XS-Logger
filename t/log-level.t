@@ -8,7 +8,7 @@ BEGIN { use_ok('XS::Logger') }
 {
     no strict 'refs';
 
-    is( XS::Logger->loggers(), 0 );
+    is( XS::Logger->loggers(), 5, "log disable level" );
 
     is( XS::Logger->info(),  1, "info" );
     is( XS::Logger->warn(),  2, "warn" );

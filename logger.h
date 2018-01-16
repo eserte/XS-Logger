@@ -14,7 +14,9 @@ typedef enum {
 		LOG_INFO,  /* 1 */
 		LOG_WARN,  /* 2 */
 		LOG_ERROR, /* 3 or also DIE */
-		LOG_FATAL  /* 4 or also PANIC */
+		LOG_FATAL,  /* 4 or also PANIC */
+		/* keep it in last position */
+	    LOG_DISABLE  /* 5 - disable all log events - should be preserved in last position */
 } logLevel;
 
 typedef struct {
@@ -23,8 +25,12 @@ typedef struct {
 	int pid;
 	int fd; /* FIXME improve style -- maybe do not need to use is_open */
 	bool is_open;
-	char *filepath;
-	logLevel level;
+	char *filepath; /* maybe use one SV* so we do not need to worry about free here */
+	logLevel level; /* only display what is after the log level (included) */
 } MyLogger;
+
+/* function prototypes */
+void do_log(MyLogger *mylogger, logLevel level);
+
 
 #endif /* XS_LOGGER_H */
