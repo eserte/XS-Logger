@@ -33,6 +33,7 @@ do_log(MyLogger *mylogger, logLevel level) {
   	time_t t = time(NULL);
   	struct tm *lt = localtime(&t);
 	char buf[32];
+	bool has_logger_object = true;
 
 
 	if ( level == LOG_DISABLE ) /* to move earlier */
@@ -43,9 +44,20 @@ do_log(MyLogger *mylogger, logLevel level) {
 	/* Note: *mylogger can be a NULL pointer => would fall back to a GV string or a constant from .c to get the filename */
 
 	if ( mylogger ) { /* we got a mylogger pointer */
+		if ( ! mylogger->handle ) {
+			if ( (handle = PerlIO_open( path, "a" )) == NULL ) /* open in append mode */
+				croak("Failed to open file \"%s\"", path);
+			mylogger->handle = handle; /* save the handle for future reuse */
+		}
+
+		handle = mylogger->handle;
+	} else {
+		has_logger_object = false;
 		if ( (handle = PerlIO_open( path, "a" )) == NULL ) /* open in append mode */
 			croak("Failed to open file \"%s\"", path);
+	}
 
+	if ( handle ) {
 		/* acquire lock */
 		flock( handle, LOCK_EX );
 
@@ -57,11 +69,13 @@ do_log(MyLogger *mylogger, logLevel level) {
 		PerlIO_flush(handle);
 		/* release lock */
 		flock( handle, LOCK_UN );
+	}
 
+	if ( !has_logger_object ) {
 		PerlIO_close( handle );
 	}
 
-
+	return;
 }
 
 /* function exposed to the module */
@@ -241,14 +255,23 @@ PREINIT:
 PPCODE:
 {
 	    temp = PL_markstack_ptr++;
-	    mylogger = INT2PTR(MyLogger*, SvIV(SvRV(self)));
-	    free(mylogger);
-	    if (PL_markstack_ptr != temp) {
-	        /* truly void, because dXSARGS not invoked */
-	        PL_markstack_ptr = temp;
-	        XSRETURN_EMPTY;
-	        /* return empty stack */
-	    }  /* must have used dXSARGS; list context implied */
+
+	    if ( self && SvROK(self) && SvOBJECT(SvRV(self)) ) { /* check if self is an object */
+		    mylogger = INT2PTR(MyLogger*, SvIV(SvRV(self)));
+		    /* close the file handle on destroy if exists */
+		    if ( mylogger->handle )
+		    	PerlIO_close( mylogger->handle );
+		    /* free the logger... maybe more to clear from struct */
+		    free(mylogger);
+	    }
+
+		if (PL_markstack_ptr != temp) {
+		    /* truly void, because dXSARGS not invoked */
+		    PL_markstack_ptr = temp;
+		    XSRETURN_EMPTY;
+		    /* return empty stack */
+		}  /* must have used dXSARGS; list context implied */
+
 	    return;  /* assume stack size is correct */
 }
 
