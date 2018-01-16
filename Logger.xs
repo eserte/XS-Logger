@@ -22,7 +22,7 @@ static const char *level_colors[] = {
 
 /* c internal functions */
 void
-do_log(MyLogger *mylogger, logLevel level, ...) {
+do_log(MyLogger *mylogger, logLevel level, const char *fmt, ...) {
 	PerlIO *handle = NULL;
 	char path[256] = "/tmp/my-test";
 	/* Get current time */
@@ -55,17 +55,32 @@ do_log(MyLogger *mylogger, logLevel level, ...) {
 	}
 
 	if ( handle ) {
+		va_list args;
+
+		va_start(args, fmt);
+
 		/* acquire lock */
 		flock( handle, LOCK_EX );
 
+
+	  		/* (unsigned long) getpid() */
+	  		// do_log( mylogger, level, args );
+
+
 		/* write the message */
-		PerlIO_printf( handle, "%s %-5s %s:%d: ", buf, level_names[level], path, level );
-		PerlIO_write( handle, "a message...", 12 );
+		PerlIO_printf( handle, "%s %d %-5s %s:%d: ", buf, (int) getpid(), level_names[level], path, level );
+		if ( fmt && strlen(fmt) ) {
+			PerlIO_vprintf( handle, fmt, args );
+		}
+		//PerlIO_write( handle, "a message...", 12 );
+		// FIXME - to improve only add if missing from fmt
 		PerlIO_write( handle, "\n", 1 );
 
 		PerlIO_flush(handle);
 		/* release lock */
 		flock( handle, LOCK_UN );
+
+		va_end(args);
 	}
 
 	if ( !has_logger_object ) {
@@ -174,15 +189,46 @@ CODE:
      }
 
      if (dolog) {
-  		// va_list args;
+     	SV **list;
 
-  		// va_start(args, self);
-  		/* (unsigned long) getpid() */
-  		// do_log( mylogger, level, args );
-  		// va_end(args);
+     	if ( items < 3 ) {
+     		/* maybe croak ?? */
+     		//croak("Need more args")
+     		do_log( mylogger, level, "" );
+     	} else {
+     		IV i;
+     		I32 nitems = items - 1; /* for self */
+     		//const char *fmt;
+     		const char **xargs;
 
-  		do_log( mylogger, level );
+     		//Newx(list, nitems, SV*);
+     		Newx(xargs, nitems, char *);
+     		//args = (const char **)malloc (sizeof (char *) * nargs);
+      		for ( i = 1 ; i < items ; ++i ) {
+                if ( !SvOK(ST(i)) )
+                    croak( "Invalid element item %i - not an SV.", (int) i );
+                else {
 
+                    //list[ i - 1 ] = (SV*) ST(i);
+                    //if
+                    xargs[i - 1] = SvPV_nolen(ST (i) );
+                }
+      		}
+
+  			// va_list args;
+	  		// va_start(args, self);
+	  		/* (unsigned long) getpid() */
+	  		// do_log( mylogger, level, args );
+	  		// va_end(args);
+
+      		// FIXME need to build a list of arguments...
+      		do_log( mylogger, level, xargs[0], xargs[1], xargs[2], xargs[3] );
+  			//do_log( mylogger, level, "---- my test %d ------\n", 42 );
+
+     		Safefree( xargs );
+     		//Safefree( list );
+
+     	}
 
      }
 

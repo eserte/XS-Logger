@@ -30,4 +30,17 @@ BEGIN { use_ok('XS::Logger') }
 
 }
 
+{
+    my $logger = XS::Logger->new;
+
+    is( $logger->info("one info"), 1, "info" );
+    is( $logger->warn( "a warning with integer '%d'", 42 ), 2, "warn" );
+    is( $logger->error("one error"),       3, "error" );
+    is( $logger->die("this is a die"),     3, "die" );
+    is( $logger->panic("this is a panic"), 4, "panic" );
+    is( $logger->fatal("this is fatal"),   4, "fatal" );
+    is( $logger->debug( "my debug message %s", "whatever" ), 0, "debug" );
+
+}
+
 done_testing;
