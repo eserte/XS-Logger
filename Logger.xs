@@ -194,15 +194,16 @@ CODE:
      if (dolog) {
      	SV **list;
 
-     	if ( items < 3 ) {
+     	if ( items < 2 ) { /* */
      		/* maybe croak ?? */
      		//croak("Need more args")
      		do_log( mylogger, level, "" );
-     	} else {
+     	} else if ( items < 8 ) { /* set a cap on the maximum of item we can use */
      		IV i;
      		I32 nitems = items - 1; /* for self */
      		//const char *fmt;
      		const char **xargs; /* maybe simply use something like char *xargs[16] why would you need more ? */
+     		const void *xxargs[8];
 
      		//Newx(list, nitems, SV*);
      		Newx(xargs, nitems, char *);
@@ -211,9 +212,8 @@ CODE:
                 if ( !SvOK(ST(i)) )
                     croak( "Invalid element item %i - not an SV.", (int) i );
                 else {
+                	/* do a switch on the type */
 
-                    //list[ i - 1 ] = (SV*) ST(i);
-                    //if
                     xargs[i - 1] = SvPV_nolen( ST(i) ); /* not very performant convert everything to a PV */
                 }
       		}
@@ -233,6 +233,8 @@ CODE:
      		Safefree( xargs );
      		//Safefree( list );
 
+     	} else {
+     		croak("Too many args to the caller (max=)");
      	}
 
      }
