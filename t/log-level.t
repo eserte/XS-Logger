@@ -12,17 +12,18 @@ BEGIN { use_ok('XS::Logger') }
         #our $XS::Logger::PATH_FILE = "/fdsfdsfsdfsd"; # // default_value
 
         ## TODO: make it a function call by having self optional
-        #is( XS::Logger::info(),  1, "info" );
+        is( XS::Logger::info(), 1, "info" );
+        is( XS::Logger::info( "something - %s %s", "cherry", "pie" ), 1, "info" );
 
-        is( XS::Logger->loggers(), 5, "log disable level" );
+        is( XS::Logger::loggers(), 5, "log disable level" );
 
-        is( XS::Logger->info(),  1, "info" );
-        is( XS::Logger->warn(),  2, "warn" );
-        is( XS::Logger->error(), 3, "error" );
-        is( XS::Logger->die(),   3, "die" );
-        is( XS::Logger->panic(), 4, "panic" );
-        is( XS::Logger->fatal(), 4, "fatal" );
-        is( XS::Logger->debug(), 0, "debug" );
+        is( XS::Logger::info(),  1, "info" );
+        is( XS::Logger::warn(),  2, "warn" );
+        is( XS::Logger::error(), 3, "error" );
+        is( XS::Logger::die(),   3, "die" );
+        is( XS::Logger::panic(), 4, "panic" );
+        is( XS::Logger::fatal(), 4, "fatal" );
+        is( XS::Logger::debug(), 0, "debug" );
     }
 
     my $logger = XS::Logger->new( { path => "/ddwdewf" } );

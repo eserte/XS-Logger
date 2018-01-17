@@ -141,8 +141,7 @@ OUTPUT:
 
 
 int
-xlog_loggers(self, ...)
-     SV* self;
+xlog_loggers(...)
 ALIAS:
 	    XS::Logger::info                 = 1
 	    XS::Logger::warn                 = 2
@@ -153,11 +152,13 @@ ALIAS:
 	    XS::Logger::debug                = 7
 PREINIT:
      	SV *ret;
+     	SV* self; /* optional */
 CODE:
 {
      logLevel level = LOG_DISABLE;
      bool dolog = true;
      MyLogger* mylogger = NULL; /* can be null when not called on an object */
+     int args_start_at = 0;
 
      switch (ix) {
          case 1: /* info */
@@ -182,11 +183,12 @@ CODE:
 
      }
 
-     /* call the logger function */
-     /* check the caller level */
-     if ( self && SvROK(self) && SvOBJECT(SvRV(self)) ) { /* check if self is an object */
+	 /* check if called as function or method call */
+     if ( items && SvROK(ST(0)) && SvOBJECT(SvRV(ST(0))) ) { /* check if self is an object */
+     	self = ST(0);
+     	args_start_at = 1;
      	mylogger = INT2PTR(MyLogger*, SvIV(SvRV(self)));
-
+     	/* check the caller level */
      	if ( level < mylogger->level )
      		dolog = false;
      }
@@ -206,13 +208,13 @@ CODE:
 
      		//Newx(list, nitems, SV*);
 
-      		for ( i = 1 ; i < items ; ++i ) {
+      		for ( i = args_start_at ; i < items ; ++i ) {
                 SV *sv = ST(i);
                 if ( !SvOK(sv) )
                     croak( "Invalid element item %i - not an SV.", (int) i );
                 else {
                 	/* do a switch on the type */
-                	if ( i == 1 ) { /* the first entry shoulkd be the format */
+                	if ( i == args_start_at ) { /* the first entry shoulkd be the format */
                 		if ( !SvPOK(sv) ) { /* maybe upgrade to a PV */
                 			if ( SvIOK(sv) )
                 				 SvUPGRADE(sv, SVt_PVIV);
@@ -221,7 +223,7 @@ CODE:
                 		}
                 		fmt = SvPV_nolen( sv );
                 	} else {
-                		int ix = i - 2;
+                		int ix = i - 1 - args_start_at;
                 		if ( SvIOK(sv) ) { /* SvTYPE(sv) == SVt_IV */
 	                		targs[ix].ival = SvIV(sv);
                 		} else if ( SvNOK(sv) ) { // not working for now
