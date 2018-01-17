@@ -78,10 +78,6 @@ do_log(MyLogger *mylogger, logLevel level, const char *fmt, int num_args, ...) {
 
 		ACQUIRE_LOCK_ONCE(fhandle);
 
-	  		/* (unsigned long) getpid() */
-	  		// do_log( mylogger, level, args );
-	  	/* -0600 */
-
 		/* write the message */
 		/* header: [timestamp tz] pid LEVEL */
 		if ( mylogger && mylogger->use_color ) {
@@ -101,7 +97,7 @@ do_log(MyLogger *mylogger, logLevel level, const char *fmt, int num_args, ...) {
 		}
 
 		{
-			int len;
+			int len = 0;
 			//PerlIO_printf( PerlIO_stderr(), "# num_args %d\n", num_args );
 			if ( fmt && (len=strlen(fmt)) ) {
 				if (num_args == 0)  /* no need to use sprintf when not needed */
@@ -109,10 +105,11 @@ do_log(MyLogger *mylogger, logLevel level, const char *fmt, int num_args, ...) {
 				else
 					vfprintf( fhandle, fmt, args );
 			}
+
+			// only add "\n" if missing from fmt
+			if ( !len || fmt[len-1] != '\n')
+				fputs( "\n", fhandle );
 		}
-		//PerlIO_write( fhandle, "a message...", 12 );
-		// FIXME - to improve only add if missing from fmt
-		fputs( "\n", fhandle );
 
 		if (has_logger_object) fflush(fhandle); /* otherwise we are going to close the ffhandle just after */
 
