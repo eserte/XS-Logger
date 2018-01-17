@@ -27,7 +27,7 @@ static const char *level_colors[] = {
 /* c internal functions */
 void
 do_log(MyLogger *mylogger, logLevel level, const char *fmt, int num_args, ...) {
-	FILE *handle = NULL;
+	FILE *fhandle = NULL;
 	char path[256] = "/tmp/my-test";
 	/* Get current time */
   	time_t t = time(NULL);
@@ -46,27 +46,27 @@ do_log(MyLogger *mylogger, logLevel level, const char *fmt, int num_args, ...) {
 	/* Note: *mylogger can be a NULL pointer => would fall back to a GV string or a constant from .c to get the filename */
 
 	if ( mylogger ) { /* we got a mylogger pointer */
-		if ( ! mylogger->handle ) {
+		if ( ! mylogger->fhandle ) {
 			/* FIXME -- probably do not use PerlIO layer at all */
-			if ( (handle = fopen( path, "a" )) == NULL ) /* open in append mode */
+			if ( (fhandle = fopen( path, "a" )) == NULL ) /* open in append mode */
 				croak("Failed to open file \"%s\"", path);
-			mylogger->handle = handle; /* save the handle for future reuse */
+			mylogger->fhandle = fhandle; /* save the fhandle for future reuse */
 		}
 
-		handle = mylogger->handle;
+		fhandle = mylogger->fhandle;
 	} else {
 		has_logger_object = false;
-		if ( (handle = fopen( path, "a" )) == NULL ) /* open in append mode */
+		if ( (fhandle = fopen( path, "a" )) == NULL ) /* open in append mode */
 			croak("Failed to open file \"%s\"", path);
 	}
 
-	if ( handle ) {
+	if ( fhandle ) {
 		va_list args;
 
 		if (num_args) va_start(args, num_args);
 
 		/* acquire lock */
-		flock( fileno(handle), LOCK_EX );
+		flock( fileno(fhandle), LOCK_EX );
 
 
 	  		/* (unsigned long) getpid() */
@@ -74,31 +74,31 @@ do_log(MyLogger *mylogger, logLevel level, const char *fmt, int num_args, ...) {
 	  	/* -0600 */
 
 		/* write the message */
-		fprintf( handle, "[%s % 03d%02d] %d %-5s %s:%d: ", buf, (int) lt.tm_gmtoff / 3600, ( lt.tm_gmtoff % 3600) / 60,
+		fprintf( fhandle, "[%s % 03d%02d] %d %-5s %s:%d: ", buf, (int) lt.tm_gmtoff / 3600, ( lt.tm_gmtoff % 3600) / 60,
 			 (int) getpid(), level_names[level], path, level );
 		{
 			int len;
 			//PerlIO_printf( PerlIO_stderr(), "# num_args %d\n", num_args );
 			if ( fmt && (len=strlen(fmt)) ) {
 				if (num_args == 0)  /* no need to use sprintf when not needed */
-					fputs( fmt, handle );
+					fputs( fmt, fhandle );
 				else
-					vfprintf( handle, fmt, args );
+					vfprintf( fhandle, fmt, args );
 			}
 		}
-		//PerlIO_write( handle, "a message...", 12 );
+		//PerlIO_write( fhandle, "a message...", 12 );
 		// FIXME - to improve only add if missing from fmt
-		fputs( "\n", handle );
+		fputs( "\n", fhandle );
 
-		fflush(handle);
+		if (has_logger_object) fflush(fhandle); /* otherwise we are going to close the ffhandle just after */
 		/* release lock */
-		flock( fileno(handle), LOCK_UN );
+		flock( fileno(fhandle), LOCK_UN );
 
 		if (num_args) va_end(args);
 	}
 
 	if ( !has_logger_object )
-		fclose( handle );
+		fclose( fhandle );
 
 	return;
 }
@@ -339,9 +339,9 @@ PPCODE:
 
 	    if ( self && SvROK(self) && SvOBJECT(SvRV(self)) ) { /* check if self is an object */
 		    mylogger = INT2PTR(MyLogger*, SvIV(SvRV(self)));
-		    /* close the file handle on destroy if exists */
-		    if ( mylogger->handle )
-		    	fclose( mylogger->handle );
+		    /* close the file fhandle on destroy if exists */
+		    if ( mylogger->fhandle )
+		    	fclose( mylogger->fhandle );
 		    /* free the logger... maybe more to clear from struct */
 		    free(mylogger);
 	    }
