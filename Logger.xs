@@ -43,7 +43,7 @@ do_log(MyLogger *mylogger, logLevel level, const char *fmt, ...) {
 
 	if ( mylogger ) { /* we got a mylogger pointer */
 		if ( ! mylogger->handle ) {
-			/* probably do not use PerlIO layer at all */
+			/* FIXME -- probably do not use PerlIO layer at all */
 			if ( (handle = PerlIO_open( path, "a" )) == NULL ) /* open in append mode */
 				croak("Failed to open file \"%s\"", path);
 			mylogger->handle = handle; /* save the handle for future reuse */
@@ -197,44 +197,53 @@ CODE:
      	if ( items < 2 ) { /* */
      		/* maybe croak ?? */
      		//croak("Need more args")
-     		do_log( mylogger, level, "" );
-     	} else if ( items < 8 ) { /* set a cap on the maximum of item we can use */
+     		do_log( mylogger, level, "" ); /* do a simple call */
+     	} else if ( items <= 12 ) { /* set a cap on the maximum of item we can use: 10 arguments + 1 format + 1 for self */
      		IV i;
      		I32 nitems = items - 1; /* for self */
-     		//const char *fmt;
-     		const char **xargs; /* maybe simply use something like char *xargs[16] why would you need more ? */
-     		const void *xxargs[8];
+     		const char *fmt;
+     		MultiValue targs[10]; /* no need to malloc limited to 10 */
 
      		//Newx(list, nitems, SV*);
-     		Newx(xargs, nitems, char *);
-     		//args = (const char **)malloc (sizeof (char *) * nargs);
+
       		for ( i = 1 ; i < items ; ++i ) {
-                if ( !SvOK(ST(i)) )
+                SV *sv = ST(i);
+                if ( !SvOK(sv) )
                     croak( "Invalid element item %i - not an SV.", (int) i );
                 else {
                 	/* do a switch on the type */
+                	if ( i == 1 ) { /* the first entry shoulkd be the format */
+                		if ( !SvPOK(sv) ) { /* maybe upgrade to a PV */
+                			if ( SvIOK(sv) )
+                				 SvUPGRADE(sv, SVt_PVIV);
+                			else
+                				croak("First argument must be a string");
+                		}
+                		fmt = SvPV_nolen( sv );
+                	} else {
+                		int ix = i - 2;
+                		if ( SvIOK(sv) ) { /* SvTYPE(sv) == SVt_IV */
+	                		targs[ix].ival = SvIV(sv);
+                		} else if ( SvNOK(sv) ) { // not working for now
+                			//PerlIO_printf( PerlIO_stderr(), "# SV SV %f\n", 1.345 );
+                			//PerlIO_printf( PerlIO_stderr(), "# SV SV %f\n", SvNV(sv) );
+                			targs[ix].fval = SvNV(sv);
+                		} else {
+	                		targs[ix].sval = SvPV_nolen(sv);
+                		}
 
-                    xargs[i - 1] = SvPV_nolen( ST(i) ); /* not very performant convert everything to a PV */
+                	}
                 }
       		}
 
-  			// va_list args;
-	  		// va_start(args, self);
-	  		/* (unsigned long) getpid() */
-	  		// do_log( mylogger, level, args );
-	  		// va_end(args);
-
       		//PerlIO_printf( PerlIO_stderr(), "# something %d\n", 42 );
-
-      		// FIXME need to build a list of arguments...
-      		do_log( mylogger, level, xargs[0], xargs[1], xargs[2], xargs[3] );
-  			//do_log( mylogger, level, "---- my test %d ------\n", 42 );
-
-     		Safefree( xargs );
-     		//Safefree( list );
+ 			// can switch on the number of arguments
+      		do_log( mylogger, level, fmt, targs[0], targs[1], targs[2], targs[3], targs[4],
+      									  targs[5], targs[6], targs[7], targs[8], targs[9]
+      			);
 
      	} else {
-     		croak("Too many args to the caller (max=)");
+     		croak("Too many args to the caller (max=10)");
      	}
 
      }

@@ -21,6 +21,23 @@ typedef enum {
 	    LOG_DISABLE  /* 5 - disable all log events - should be preserved in last position */
 } logLevel;
 
+typedef union {
+        int ival;
+        double fval;
+        char *sval;
+} MultiValue;
+
+/*
+typedef struct {
+    union {
+        int ival;
+        float fval;
+        char *sval;
+    } v;
+    enum { is_int, is_float, is_str } type;
+} TypedValue;
+*/
+
 typedef struct {
 	int x;
 	int y;
