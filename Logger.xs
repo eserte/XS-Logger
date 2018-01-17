@@ -15,6 +15,8 @@
 
 #include "logger.h"
 
+static const char *DEFAULT_LOG_FILE = "/var/log/xslogger.log";
+
 /* some constants */
 static const char *level_names[] = {
   "DEBUG", "INFO", "WARN", "ERROR", "FATAL" /* , "DISABLE" */
@@ -51,6 +53,7 @@ do_log(MyLogger *mylogger, logLevel level, const char *fmt, int num_args, ...) {
 			if ( (fhandle = fopen( path, "a" )) == NULL ) /* open in append mode */
 				croak("Failed to open file \"%s\"", path);
 			mylogger->fhandle = fhandle; /* save the fhandle for future reuse */
+			mylogger->pid = getpid(); /* store the pid which open the file */
 		}
 
 		fhandle = mylogger->fhandle;

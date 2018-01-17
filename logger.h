@@ -1,11 +1,9 @@
 /*
  * logger.h
- *
- *
  */
 
 #ifndef XS_LOGGER_H
-#  define XS_LOGGER_H
+#  define XS_LOGGER_H 1
 
 #include <perl.h>
 
@@ -27,23 +25,11 @@ typedef union {
         char *sval;
 } MultiValue;
 
-/*
-typedef struct {
-    union {
-        int ival;
-        float fval;
-        char *sval;
-    } v;
-    enum { is_int, is_float, is_str } type;
-} TypedValue;
-*/
-
 typedef struct {
 	int x;
 	int y;
-	int pid;
+	pid_t pid;
 	FILE *fhandle;
-	bool is_open;
 	char *filepath; /* maybe use one SV* so we do not need to worry about free here */
 	logLevel level; /* only display what is after the log level (included) */
 } MyLogger;
