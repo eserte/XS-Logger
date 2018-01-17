@@ -43,7 +43,7 @@ typedef struct {
 	int y;
 	int pid;
 	int fd; /* FIXME improve style -- maybe do not need to use is_open */
-	PerlIO *handle;
+	FILE *handle;
 	bool is_open;
 	char *filepath; /* maybe use one SV* so we do not need to worry about free here */
 	logLevel level; /* only display what is after the log level (included) */

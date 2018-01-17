@@ -76,8 +76,8 @@ __END__
 1193:before calling C<sv_upgrade>, and hence does not croak.  See also
 
 TODO:
-- optimize sprintf when no argument
 - use c open / printf
 - use text file
 - use GV for global filename
 - add colors
+- switch test to test2
