@@ -37,6 +37,7 @@ do_log(MyLogger *mylogger, logLevel level, const char *fmt, int num_args, ...) {
   	struct tm lt = {0};
 	char buf[32];
 	bool has_logger_object = true;
+	bool hold_lock = false;
 
 
 	localtime_r(&t, &lt);
@@ -55,6 +56,9 @@ do_log(MyLogger *mylogger, logLevel level, const char *fmt, int num_args, ...) {
 				croak("Failed to open file \"%s\"", path);
 			mylogger->fhandle = fhandle; /* save the fhandle for future reuse */
 			mylogger->pid = getpid(); /* store the pid which open the file */
+
+			ACQUIRE_LOCK_ONCE(fhandle); /* get a lock before moving to the end */
+			fseek(fhandle, 0, SEEK_END);
 		}
 
 		fhandle = mylogger->fhandle;
@@ -62,6 +66,9 @@ do_log(MyLogger *mylogger, logLevel level, const char *fmt, int num_args, ...) {
 		has_logger_object = false;
 		if ( (fhandle = fopen( path, "a" )) == NULL ) /* open in append mode */
 			croak("Failed to open file \"%s\"", path);
+
+		ACQUIRE_LOCK_ONCE(fhandle); /* get a lock before moving to the end */
+		fseek(fhandle, 0, SEEK_END);
 	}
 
 	if ( fhandle ) {
@@ -69,9 +76,7 @@ do_log(MyLogger *mylogger, logLevel level, const char *fmt, int num_args, ...) {
 
 		if (num_args) va_start(args, num_args);
 
-		/* acquire lock */
-		flock( fileno(fhandle), LOCK_EX );
-
+		ACQUIRE_LOCK_ONCE(fhandle);
 
 	  		/* (unsigned long) getpid() */
 	  		// do_log( mylogger, level, args );
@@ -110,14 +115,13 @@ do_log(MyLogger *mylogger, logLevel level, const char *fmt, int num_args, ...) {
 		fputs( "\n", fhandle );
 
 		if (has_logger_object) fflush(fhandle); /* otherwise we are going to close the ffhandle just after */
-		/* release lock */
-		flock( fileno(fhandle), LOCK_UN );
 
 		if (num_args) va_end(args);
 	}
 
-	if ( !has_logger_object )
-		fclose( fhandle );
+	RELEASE_LOCK(fhandle); /* only release if acquired before */
+
+	if ( !has_logger_object ) fclose( fhandle );
 
 	return;
 }

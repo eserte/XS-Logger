@@ -72,12 +72,7 @@ BEGIN { use_ok('XS::Logger') }
 done_testing;
 __END__
 
-1192-generally want to use the C<SvUPGRADE> macro wrapper, which checks the type
-1193:before calling C<sv_upgrade>, and hence does not croak.  See also
-
 TODO:
-- use c open / printf
 - use text file
 - use GV for global filename
-- add colors
 - switch test to test2

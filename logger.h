@@ -38,5 +38,7 @@ typedef struct {
 /* function prototypes */
 void do_log(MyLogger *mylogger, logLevel level, const char *fmt, int num_args, ...);
 
+#define ACQUIRE_LOCK_ONCE(f) if (!hold_lock) { flock( fileno(f), LOCK_EX ); hold_lock = true; }
+#define RELEASE_LOCK(f) if (hold_lock) flock( fileno(f), LOCK_UN );
 
 #endif /* XS_LOGGER_H */
