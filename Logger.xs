@@ -27,15 +27,17 @@ do_log(MyLogger *mylogger, logLevel level, const char *fmt, ...) {
 	char path[256] = "/tmp/my-test";
 	/* Get current time */
   	time_t t = time(NULL);
-  	struct tm *lt = localtime(&t);
+  	struct tm lt = {0};
 	char buf[32];
 	bool has_logger_object = true;
 
 
+	localtime_r(&t, &lt);
+
 	if ( level == LOG_DISABLE ) /* to move earlier */
 		return;
 
-	buf[strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", lt)] = '\0';
+	buf[strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &lt)] = '\0';
 
 	/* Note: *mylogger can be a NULL pointer => would fall back to a GV string or a constant from .c to get the filename */
 
@@ -65,10 +67,11 @@ do_log(MyLogger *mylogger, logLevel level, const char *fmt, ...) {
 
 	  		/* (unsigned long) getpid() */
 	  		// do_log( mylogger, level, args );
-
+	  	/* -0600 */
 
 		/* write the message */
-		PerlIO_printf( handle, "%s %d %-5s %s:%d: ", buf, (int) getpid(), level_names[level], path, level );
+		PerlIO_printf( handle, "[%s % 03d%02d] %d %-5s %s:%d: ", buf, (int) lt.tm_gmtoff / 3600, ( lt.tm_gmtoff % 3600) / 60,
+			 (int) getpid(), level_names[level], path, level );
 		if ( fmt && strlen(fmt) ) {
 			PerlIO_vprintf( handle, fmt, args );
 		}
@@ -199,7 +202,7 @@ CODE:
      		IV i;
      		I32 nitems = items - 1; /* for self */
      		//const char *fmt;
-     		const char **xargs;
+     		const char **xargs; /* maybe simply use something like char *xargs[16] why would you need more ? */
 
      		//Newx(list, nitems, SV*);
      		Newx(xargs, nitems, char *);
@@ -211,7 +214,7 @@ CODE:
 
                     //list[ i - 1 ] = (SV*) ST(i);
                     //if
-                    xargs[i - 1] = SvPV_nolen(ST (i) );
+                    xargs[i - 1] = SvPV_nolen( ST(i) ); /* not very performant convert everything to a PV */
                 }
       		}
 
@@ -220,6 +223,8 @@ CODE:
 	  		/* (unsigned long) getpid() */
 	  		// do_log( mylogger, level, args );
 	  		// va_end(args);
+
+      		//PerlIO_printf( PerlIO_stderr(), "# something %d\n", 42 );
 
       		// FIXME need to build a list of arguments...
       		do_log( mylogger, level, xargs[0], xargs[1], xargs[2], xargs[3] );
