@@ -196,13 +196,13 @@ CODE:
      if (dolog) {
      	SV **list;
 
-     	if ( items < 2 ) { /* */
+     	if ( items < (1 + args_start_at) ) { /* */
      		/* maybe croak ?? */
      		//croak("Need more args")
      		do_log( mylogger, level, "" ); /* do a simple call */
-     	} else if ( items <= 12 ) { /* set a cap on the maximum of item we can use: 10 arguments + 1 format + 1 for self */
+     	} else if ( items <= ( 11 + args_start_at ) ) { /* set a cap on the maximum of item we can use: 10 arguments + 1 format + 1 for self */
      		IV i;
-     		I32 nitems = items - 1; /* for self */
+     		I32 nitems = items - args_start_at; /* for self */
      		const char *fmt;
      		MultiValue targs[10]; /* no need to malloc limited to 10 */
 

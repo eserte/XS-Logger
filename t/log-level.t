@@ -11,8 +11,8 @@ BEGIN { use_ok('XS::Logger') }
     {
         #our $XS::Logger::PATH_FILE = "/fdsfdsfsdfsd"; # // default_value
 
-        ## TODO: make it a function call by having self optional
-        is( XS::Logger::info(), 1, "info" );
+        is( XS::Logger::info(),                       1, "info" );
+        is( XS::Logger::info("a simple information"), 1, "info" );
         is( XS::Logger::info( "something - %s %s", "cherry", "pie" ), 1, "info" );
 
         is( XS::Logger::loggers(), 5, "log disable level" );
