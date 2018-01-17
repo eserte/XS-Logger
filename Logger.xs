@@ -22,7 +22,7 @@ static const char *level_colors[] = {
 
 /* c internal functions */
 void
-do_log(MyLogger *mylogger, logLevel level, const char *fmt, ...) {
+do_log(MyLogger *mylogger, logLevel level, const char *fmt, int num_args, ...) {
 	PerlIO *handle = NULL;
 	char path[256] = "/tmp/my-test";
 	/* Get current time */
@@ -59,7 +59,7 @@ do_log(MyLogger *mylogger, logLevel level, const char *fmt, ...) {
 	if ( handle ) {
 		va_list args;
 
-		va_start(args, fmt);
+		if (num_args) va_start(args, num_args);
 
 		/* acquire lock */
 		flock( handle, LOCK_EX );
@@ -72,8 +72,15 @@ do_log(MyLogger *mylogger, logLevel level, const char *fmt, ...) {
 		/* write the message */
 		PerlIO_printf( handle, "[%s % 03d%02d] %d %-5s %s:%d: ", buf, (int) lt.tm_gmtoff / 3600, ( lt.tm_gmtoff % 3600) / 60,
 			 (int) getpid(), level_names[level], path, level );
-		if ( fmt && strlen(fmt) ) {
-			PerlIO_vprintf( handle, fmt, args );
+		{
+			int len;
+			//PerlIO_printf( PerlIO_stderr(), "# num_args %d\n", num_args );
+			if ( fmt && (len=strlen(fmt)) ) {
+				if (num_args == 0)  /* no need to use sprintf when not needed */
+					PerlIO_write( handle, fmt, len );
+				else
+					PerlIO_vprintf( handle, fmt, args );
+			}
 		}
 		//PerlIO_write( handle, "a message...", 12 );
 		// FIXME - to improve only add if missing from fmt
@@ -83,7 +90,7 @@ do_log(MyLogger *mylogger, logLevel level, const char *fmt, ...) {
 		/* release lock */
 		flock( handle, LOCK_UN );
 
-		va_end(args);
+		if (num_args) va_end(args);
 	}
 
 	if ( !has_logger_object ) {
@@ -199,7 +206,7 @@ CODE:
      	if ( items < (1 + args_start_at) ) { /* */
      		/* maybe croak ?? */
      		//croak("Need more args")
-     		do_log( mylogger, level, "" ); /* do a simple call */
+     		do_log( mylogger, level, "", 0 ); /* do a simple call */
      	} else if ( items <= ( 11 + args_start_at ) ) { /* set a cap on the maximum of item we can use: 10 arguments + 1 format + 1 for self */
      		IV i;
      		I32 nitems = items - args_start_at; /* for self */
@@ -240,9 +247,10 @@ CODE:
 
       		//PerlIO_printf( PerlIO_stderr(), "# something %d\n", 42 );
  			// can switch on the number of arguments
-      		do_log( mylogger, level, fmt, targs[0], targs[1], targs[2], targs[3], targs[4],
+      		do_log( mylogger, level, fmt, items - args_start_at,
+      									  targs[0], targs[1], targs[2], targs[3], targs[4],
       									  targs[5], targs[6], targs[7], targs[8], targs[9]
-      			);
+      		);
 
      	} else {
      		croak("Too many args to the caller (max=10)");

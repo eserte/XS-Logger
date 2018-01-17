@@ -50,7 +50,7 @@ typedef struct {
 } MyLogger;
 
 /* function prototypes */
-void do_log(MyLogger *mylogger, logLevel level, const char *fmt, ...);
+void do_log(MyLogger *mylogger, logLevel level, const char *fmt, int num_args, ...);
 
 
 #endif /* XS_LOGGER_H */

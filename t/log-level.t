@@ -13,7 +13,7 @@ BEGIN { use_ok('XS::Logger') }
 
         is( XS::Logger::info(),                       1, "info" );
         is( XS::Logger::info("a simple information"), 1, "info" );
-        is( XS::Logger::info( "something - %s %s", "cherry", "pie" ), 1, "info" );
+        is( XS::Logger::info( "something to eat - %s %s", "cherry", "pie" ), 1, "info" );
 
         is( XS::Logger::loggers(), 5, "log disable level" );
 
@@ -74,3 +74,10 @@ __END__
 
 1192-generally want to use the C<SvUPGRADE> macro wrapper, which checks the type
 1193:before calling C<sv_upgrade>, and hence does not croak.  See also
+
+TODO:
+- optimize sprintf when no argument
+- use c open / printf
+- use text file
+- use GV for global filename
+- add colors
