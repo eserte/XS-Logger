@@ -28,6 +28,7 @@ typedef union {
 typedef struct {
 	int x;
 	int y;
+	bool use_color;
 	pid_t pid;
 	FILE *fhandle;
 	char *filepath; /* maybe use one SV* so we do not need to worry about free here */

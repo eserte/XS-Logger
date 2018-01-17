@@ -18,12 +18,13 @@
 static const char *DEFAULT_LOG_FILE = "/var/log/xslogger.log";
 
 /* some constants */
-static const char *level_names[] = {
+static const char *LOG_LEVEL_NAMES[] = {
   "DEBUG", "INFO", "WARN", "ERROR", "FATAL" /* , "DISABLE" */
 };
 
-static const char *level_colors[] = {
-  "\x1b[94m", "\x1b[36m", "\x1b[32m", "\x1b[33m", "\x1b[31m", "\x1b[35m"
+static const char *END_COLOR = "\x1b[0m";
+static const char *LEVEL_COLORS[] = {
+  "\x1b[94m", "\x1b[36m", "\x1b[33m", "\x1b[31m", "\x1b[31m", "\x1b[35m"
 };
 
 /* c internal functions */
@@ -77,8 +78,23 @@ do_log(MyLogger *mylogger, logLevel level, const char *fmt, int num_args, ...) {
 	  	/* -0600 */
 
 		/* write the message */
-		fprintf( fhandle, "[%s % 03d%02d] %d %-5s %s:%d: ", buf, (int) lt.tm_gmtoff / 3600, ( lt.tm_gmtoff % 3600) / 60,
-			 (int) getpid(), level_names[level], path, level );
+		/* header: [timestamp tz] pid LEVEL */
+		if ( mylogger && mylogger->use_color ) {
+			fprintf( fhandle, "[%s % 03d%02d] %d %s%-5s%s %s:%d: ",
+				 buf, (int) lt.tm_gmtoff / 3600, ( lt.tm_gmtoff % 3600) / 60,
+				 (int) getpid(),
+				 LEVEL_COLORS[level], LOG_LEVEL_NAMES[level], END_COLOR,
+				 path, level
+			);
+		} else {
+			fprintf( fhandle, "[%s % 03d%02d] %d %-5s %s:%d: ",
+				 buf, (int) lt.tm_gmtoff / 3600, ( lt.tm_gmtoff % 3600) / 60,
+				 (int) getpid(),
+				 LOG_LEVEL_NAMES[level],
+				 path, level
+			);
+		}
+
 		{
 			int len;
 			//PerlIO_printf( PerlIO_stderr(), "# num_args %d\n", num_args );
@@ -131,7 +147,17 @@ CODE:
 		if ( SvROK(extra) && SvTYPE(SvRV(extra)) == SVt_PVHV )
 			opts = (HV*) SvRV( extra );
 	}
+
+	/* default (non zero) values */
+	mylogger->use_color = true; /* maybe use a GV from the stash to set the default value */
+
 	if ( opts ) {
+		if ( hv_existss( opts, "color" ) ) {
+			if ( svp = hv_fetchs(opts, "color", FALSE) ) {
+				if (!SvIOK(*svp)) croak("invalid color option value: should be a boolean 1/0");
+				mylogger->use_color = (bool) SvIV(*svp);
+			}
+		}
 		if ( hv_existss( opts, "x" ) ) {
 			if ( svp = hv_fetchs(opts, "x", FALSE) ) {
 				mylogger->x =  SvIV(*svp);
@@ -232,7 +258,7 @@ CODE:
                 			if ( SvIOK(sv) )
                 				 SvUPGRADE(sv, SVt_PVIV);
                 			else
-                				croak("First argument must be a string");
+                				croak("First argument must be a string.");
                 		}
                 		fmt = SvPV_nolen( sv );
                 	} else {
@@ -259,7 +285,7 @@ CODE:
       		);
 
      	} else {
-     		croak("Too many args to the caller (max=10)");
+     		croak("Too many args to the caller (max=10).");
      	}
 
      }

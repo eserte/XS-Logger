@@ -26,7 +26,7 @@ BEGIN { use_ok('XS::Logger') }
         is( XS::Logger::debug(), 0, "debug" );
     }
 
-    my $logger = XS::Logger->new( { path => "/ddwdewf" } );
+    my $logger = XS::Logger->new( { path => "/ddwdewf", color => 0 } );
 
     is( $logger->info(),  1, "info" );
     is( $logger->warn(),  2, "warn" );
