@@ -46,11 +46,25 @@ my $logfile;
         $expect_level = 'ERROR' if $level eq 'die';     # FIXME maybe to change
         $expect_level = 'FATAL' if $level eq 'panic';
 
-        eval qq{XS::Logger::$level(); 1} or die $@;
+        my $ok = eval qq{XS::Logger::$level(); 1};
+        if ( grep { $_ eq $level } qw{die panic fatal} ) {
+            ok !$ok, "$level should die";
+        }
+        else {
+            ok $ok, "$level do not die";
+        }
+
         logfile_last_line_like( $logfile, level => $expect_level, color => 0, msg => '' );
 
         my $msg = "my $level message";
-        eval qq{XS::Logger::${level}('${msg}'); 1} or die $@;
+        $ok = eval qq{XS::Logger::${level}('${msg}'); 1};
+        if ( grep { $_ eq $level } qw{die panic fatal} ) {
+            ok !$ok, "$level should die";
+        }
+        else {
+            ok $ok, "$level do not die";
+        }
+
         logfile_last_line_like( $logfile, level => $expect_level, color => 0, msg => $msg );
     }
 }
@@ -62,24 +76,38 @@ my $logfile;
 
     $logfile = $XS::Logger::PATH_FILE = $tmpdir . '/second-test.log';    # // default_value
 
-    $logger->info();
-    $logger->warn();
-    $logger->error();
-    $logger->die();
-    $logger->panic();
-    $logger->fatal();
-    $logger->debug();
+    ok eval  { $logger->info();  1 };
+    ok eval  { $logger->warn();  1 };
+    ok eval  { $logger->error(); 1 };
+    ok !eval { $logger->die();   1 };
+    ok !eval { $logger->panic(); 1 };
+    ok !eval { $logger->fatal(); 1 };
+    ok eval  { $logger->debug(); 1 };
 
     foreach my $level (qw{info warn error die panic fatal debug}) {
         my $expect_level = uc($level);
         $expect_level = 'ERROR' if $level eq 'die';                      # FIXME maybe to change
         $expect_level = 'FATAL' if $level eq 'panic';
 
-        eval { $logger->can($level)->(); 1 } or die $@;
+        my $ok = eval { $logger->can($level)->(); 1 };
+        if ( grep { $_ eq $level } qw{die panic fatal} ) {
+            ok !$ok, "$level should die";
+        }
+        else {
+            ok $ok, "$level do not die";
+        }
+
         logfile_last_line_like( $logfile, level => $expect_level, color => 0, msg => '' );
 
         my $msg = "this is a BW $level message";
-        eval { $logger->can($level)->($msg); 1 } or die $@;
+        $ok = eval { $logger->can($level)->($msg); 1 };
+        if ( grep { $_ eq $level } qw{die panic fatal} ) {
+            ok !$ok, "$level should die";
+        }
+        else {
+            ok $ok, "$level do not die";
+        }
+
         logfile_last_line_like( $logfile, level => $expect_level, color => 0, msg => $msg );
     }
 
@@ -104,7 +132,14 @@ my $logfile;
         $expect_level = 'FATAL' if $level eq 'panic';
 
         my $msg = "this is a colored $level message";
-        eval { $logger->can($level)->( $logger, $msg ); 1 } or die $@;
+        my $ok = eval { $logger->can($level)->( $logger, $msg ); 1 };
+        if ( grep { $_ eq $level } qw{die panic fatal} ) {
+            ok !$ok, "$level should die";
+        }
+        else {
+            ok $ok, "$level do not die";
+        }
+
         logfile_last_line_like( $logfile, level => $expect_level, color => 1, msg => $msg );
     }
 

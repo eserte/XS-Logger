@@ -34,7 +34,7 @@ get_default_file_path() {
 	if ( sv && SvPOK(sv) )
 		path = SvPV_nolen( sv );
 	else
-		path = DEFAULT_LOG_FILE; /* fallback to default path */
+		path = (char *) DEFAULT_LOG_FILE; /* fallback to default path */
 
 	return path;
 }
@@ -221,6 +221,8 @@ CODE:
      MyLogger* mylogger = NULL; /* can be null when not called on an object */
      int args_start_at = 0;
 
+     bool should_die = false;
+
      switch (ix) {
          case 1: /* info */
              level = LOG_INFO;
@@ -229,12 +231,16 @@ CODE:
              level = LOG_WARN;
          break;
          case 3: /* error */
+         	level = LOG_ERROR;
+         break;
          case 4: /* die */
             level = LOG_ERROR;
+            should_die = true;
          break;
          case 5: /* panic */
          case 6: /* fatal */
             level = LOG_FATAL;
+            should_die = true;
          break;
          case 7:
             level = LOG_DEBUG;
@@ -310,6 +316,9 @@ CODE:
      	}
      }
 
+     if ( should_die ) /* maybe fatal needs to exit */
+     	croak( "XS::Logger - die/fatal event logged" );
+
      /* no need to return anything there */
      XSRETURN_EMPTY;
 }
@@ -326,8 +335,8 @@ PREINIT:
 CODE:
 {   /* some getters: mainly used for test for now to access internals */
 	mylogger = INT2PTR(MyLogger*, SvIV(SvRV(self)));
-     int i = 0;
-     switch (ix) {
+
+    switch (ix) {
         case 1:
              RETVAL = newSViv( mylogger->pid );
         break;
@@ -344,6 +353,29 @@ CODE:
 }
 OUTPUT:
 	RETVAL
+
+void
+xlog_setters(self, value)
+    SV* self;
+    SV* value;
+ALIAS:
+     XS::Logger::set_level             = 1
+PREINIT:
+	MyLogger* mylogger;
+CODE:
+{   /* improve protection on self/logger here */
+	mylogger = INT2PTR(MyLogger*, SvIV(SvRV(self)));
+    switch (ix) {
+        case 1:
+        	if ( !SvIOK(value) ) croak("invalid level: must be interger.");
+             mylogger->level = SvIV(value);
+        break;
+        default:
+             croak("undefined setter");
+     }
+
+     XSRETURN_EMPTY;
+}
 
 void DESTROY(self)
     SV* self;

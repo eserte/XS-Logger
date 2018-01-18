@@ -49,6 +49,34 @@ XS::Logger - basic logger using XS
 
 # Usage
 
+# Log Levels
+
+By default all logs message are displayed but you can limit the number of informations logged
+by setting a log level.
+
+For example: setting a log level = INFO\_LOG\_LEVEL, will disable all the 'debug' informations preserving
+all other loggged events.
+
+Setting the level can be done at construction time or run time
+
+    use XS::Logger qw{:all}; # import all log levels
+
+    my $log = XS::Logger->new( {
+                                  level  => DEBUG_LOG_LEVEL
+                                       # or INFO_LOG_LEVEL
+                                       # or WARN_LOG_LEVEL
+                                       # or ERROR_LOG_LEVEL
+                                       # or FATAL_LOG_LEVEL
+                                       # or DISABLE_LOG_LEVEL
+                                  color  => 1,
+                                  path   => q{/var/log/xslogger.log
+                                }
+                               } );
+
+     $log->get_level() == XS::Logger::INFO_LOG_LEVEL or ...;
+
+     $log->set_level( XS::Logger::WARN_LOG_LEVEL() ); # only warnings, error and fatal events are logged
+
 # LICENSE
 
 # AUTHOR
