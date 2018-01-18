@@ -1,5 +1,3 @@
 
-* implement levels
 * implement die, fatal...
 * plug testcover
-* plug continuous integration travis
