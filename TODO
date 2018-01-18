@@ -1,1 +1,5 @@
-* next
+* add pod/doc
+* implement die, fatal...
+* switch to dzilla
+* pod to mdoc
+* testcover
