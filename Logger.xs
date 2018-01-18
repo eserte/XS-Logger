@@ -157,6 +157,7 @@ PREINIT:
 CODE:
 {
 
+	char tmpbuf[256] = {0};
 	/* mylogger = malloc(sizeof(MyLogger)); */ /* malloc our object */
 	Newxz( mylogger, 1, MyLogger);
 	RETVAL = newSViv(0);
@@ -178,8 +179,13 @@ CODE:
 		}
 
 		if ( (svp = hv_fetchs(opts, "logfile", FALSE)) || (svp = hv_fetchs(opts, "path", FALSE)) ) {
+			STRLEN len;
+			char *src;
 			if (!SvPOK(*svp)) croak("invalid logfile path: must be a string");
-			mylogger->filepath = SvPV_nolen(*svp); /* probably need to do a copy */
+			src = SvPV(*svp, len);
+			if (len >= sizeof(mylogger->filepath))
+				croak("file path too long max=256!");
+			strcpy(mylogger->filepath, src); /* do a copy to the object */
 		}
 	}
 

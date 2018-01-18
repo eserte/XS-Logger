@@ -29,7 +29,7 @@ typedef struct {
 	bool use_color;
 	pid_t pid;
 	FILE *fhandle;
-	char *filepath; /* maybe use one SV* so we do not need to worry about free here */
+	char filepath[256];
 	logLevel level; /* only display what is after the log level (included) */
 } MyLogger;
 
