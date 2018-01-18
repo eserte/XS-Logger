@@ -26,8 +26,6 @@ typedef union {
 } MultiValue;
 
 typedef struct {
-	int x;
-	int y;
 	bool use_color;
 	pid_t pid;
 	FILE *fhandle;

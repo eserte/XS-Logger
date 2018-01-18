@@ -157,16 +157,6 @@ CODE:
 				mylogger->use_color = (bool) SvIV(*svp);
 			}
 		}
-		if ( hv_existss( opts, "x" ) ) {
-			if ( svp = hv_fetchs(opts, "x", FALSE) ) {
-				mylogger->x =  SvIV(*svp);
-			}
-		}
-		if ( hv_existss( opts, "y" ) ) {
-			if ( svp = hv_fetchs(opts, "y", FALSE) ) {
-				mylogger->y =  SvIV(*svp);
-			}
-		}
 	}
 
 	/* ... */
@@ -300,9 +290,8 @@ SV*
 xlog_getters(self)
     SV* self;
 ALIAS:
-     XS::Logger::get_x                 = 1
-     XS::Logger::get_y                 = 2
-     XS::Logger::get_pid               = 3
+     XS::Logger::get_pid               = 1
+     XS::Logger::use_color             = 2
 PREINIT:
 	MyLogger* mylogger;
 CODE:
@@ -310,48 +299,16 @@ CODE:
 	mylogger = INT2PTR(MyLogger*, SvIV(SvRV(self)));
      int i = 0;
      switch (ix) {
-         case 1:
-             RETVAL = newSViv( mylogger->x );
-         break;
-         case 2:
-             RETVAL = newSViv( mylogger->y );
-         break;
-        case 3:
+        case 1:
              RETVAL = newSViv( mylogger->pid );
+         break;
+        case 2:
+             RETVAL = newSViv( mylogger->use_color );
          break;
          default:
              XSRETURN_EMPTY;
 
      }
-}
-OUTPUT:
-	RETVAL
-
-
-SV*
-xlog_helpers()
-     ALIAS:
-     XS::Logger::xinfo                 = 1
-     XS::Logger::xwarn                 = 2
-     XS::Logger::xdie                  = 3
-     XS::Logger::xpanic                = 4
-PREINIT:
-     SV *ret;
-CODE:
-{
-     int i = 0;
-     switch (ix) {
-         case 1:
-             i = 10; /* sizeof( struct xpvhv_aux ); */
-         break;
-         case 2:
-             i = 20;
-         break;
-         default:
-             i = ix * 100 + ix;
-
-     }
-     RETVAL = newSViv( i );
 }
 OUTPUT:
 	RETVAL

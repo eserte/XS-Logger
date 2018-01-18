@@ -1,11 +1,16 @@
-use strict;
-use Test::More;
+#!/bin/env perl
 
-# make sure the module compiles
-BEGIN { use_ok('XS::Logger') }
+use strict;
+use warnings;
+
+use Test2::Bundle::Extended;
+use Test2::Tools::Explain;
+use Test2::Plugin::NoWarnings;
+
+use XS::Logger;
 
 {
-    my $logger = XS::Logger->new( {} );
+    my $logger = XS::Logger->new();
 
     $logger->info("1.before fork...");
     if ( my $pid = fork() ) {
