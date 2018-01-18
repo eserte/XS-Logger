@@ -27,11 +27,24 @@ static const char *LEVEL_COLORS[] = {
   "\x1b[94m", "\x1b[36m", "\x1b[33m", "\x1b[1;31m", "\x1b[1;35m" /* "\x1b[1;35m"  */
 };
 
+char*
+get_default_file_path() {
+	char *path;
+	SV   *sv = get_sv( "XS::Logger::PATH_FILE", 0 );
+	if ( sv && SvPOK(sv) )
+		path = SvPV_nolen( sv );
+	else
+		path = DEFAULT_LOG_FILE; /* fallback to default path */
+
+	return path;
+}
+
 /* c internal functions */
 void
 do_log(MyLogger *mylogger, logLevel level, const char *fmt, int num_args, ...) {
 	FILE *fhandle = NULL;
-	char path[256] = "/tmp/my-test";
+	char *path = NULL;
+	SV *sv = NULL;
 	/* Get current time */
   	time_t t = time(NULL);
   	struct tm lt = {0};
@@ -50,6 +63,12 @@ do_log(MyLogger *mylogger, logLevel level, const char *fmt, int num_args, ...) {
 	/* Note: *mylogger can be a NULL pointer => would fall back to a GV string or a constant from .c to get the filename */
 
 	if ( mylogger ) { /* we got a mylogger pointer */
+		if ( mylogger->filepath && strlen(mylogger->filepath) )
+			path = mylogger->filepath;
+		else {
+			path = get_default_file_path();
+		}
+
 		if ( ! mylogger->fhandle ) {
 			/* FIXME -- probably do not use PerlIO layer at all */
 			if ( (fhandle = fopen( path, "a" )) == NULL ) /* open in append mode */
@@ -63,6 +82,8 @@ do_log(MyLogger *mylogger, logLevel level, const char *fmt, int num_args, ...) {
 
 		fhandle = mylogger->fhandle;
 	} else {
+		path = get_default_file_path();
+
 		has_logger_object = false;
 		if ( (fhandle = fopen( path, "a" )) == NULL ) /* open in append mode */
 			croak("Failed to open file \"%s\"", path);
@@ -151,18 +172,21 @@ CODE:
 	mylogger->use_color = true; /* maybe use a GV from the stash to set the default value */
 
 	if ( opts ) {
-		if ( hv_existss( opts, "color" ) ) {
-			if ( svp = hv_fetchs(opts, "color", FALSE) ) {
-				if (!SvIOK(*svp)) croak("invalid color option value: should be a boolean 1/0");
-				mylogger->use_color = (bool) SvIV(*svp);
-			}
+		if ( svp = hv_fetchs(opts, "color", FALSE) ) {
+			if (!SvIOK(*svp)) croak("invalid color option value: should be a boolean 1/0");
+			mylogger->use_color = (bool) SvIV(*svp);
+		}
+
+		if ( (svp = hv_fetchs(opts, "logfile", FALSE)) || (svp = hv_fetchs(opts, "path", FALSE)) ) {
+			if (!SvPOK(*svp)) croak("invalid logfile path: must be a string");
+			mylogger->filepath = SvPV_nolen(*svp); /* probably need to do a copy */
 		}
 	}
 
-	/* ... */
-
 	sv_setiv(obj, PTR2IV(mylogger)); /* get a pointer to our malloc object */
 	SvREADONLY_on(obj);
+
+	//XSRETURN_EMPTY;
 }
 OUTPUT:
 	RETVAL

@@ -24,13 +24,13 @@ my $tmpdir = $tempfile->dirname();
 
 ok -d $tmpdir, "got a tmpdir";
 
-my $logfile = q{/tmp/my-test};    # hard coded for now
+my $logfile;
 
 # make sure holy() is in the current namespace
 {
     note "Testing function calls XS::Logger::*something*()";
 
-    #our $XS::Logger::PATH_FILE = "/fdsfdsfsdfsd"; # // default_value
+    $logfile = $XS::Logger::PATH_FILE = $tmpdir . '/first-test.log';    # // default_value
 
     XS::Logger::info();
     logfile_last_line_like( $logfile, level => 'INFO', color => 0, msg => '', test => 'info without args' );
@@ -58,7 +58,9 @@ my $logfile = q{/tmp/my-test};    # hard coded for now
 {
     note "Testing object XS::Logger->new->log_something";
 
-    my $logger = XS::Logger->new( { path => "/ddwdewf", color => 0 } );
+    my $logger = XS::Logger->new( { color => 0 } );
+
+    $logfile = $XS::Logger::PATH_FILE = $tmpdir . '/second-test.log';    # // default_value
 
     $logger->info();
     $logger->warn();
@@ -70,7 +72,7 @@ my $logfile = q{/tmp/my-test};    # hard coded for now
 
     foreach my $level (qw{info warn error die panic fatal debug}) {
         my $expect_level = uc($level);
-        $expect_level = 'ERROR' if $level eq 'die';     # FIXME maybe to change
+        $expect_level = 'ERROR' if $level eq 'die';                      # FIXME maybe to change
         $expect_level = 'FATAL' if $level eq 'panic';
 
         eval { $logger->can($level)->(); 1 } or die $@;
@@ -84,7 +86,8 @@ my $logfile = q{/tmp/my-test};    # hard coded for now
 }
 
 {
-    my $logger = XS::Logger->new( { color => 1 } );
+    $logfile = $tmpdir . '/custom-path.log';
+    my $logger = XS::Logger->new( { color => 1, logfile => $logfile } );
 
     $logger->info("one info no newline");
     like get_logfile_last_line($logfile), qr{one info no newline\n$}, "one info no newline";

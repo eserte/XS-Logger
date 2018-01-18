@@ -34,6 +34,7 @@ typedef struct {
 } MyLogger;
 
 /* function prototypes */
+char* get_default_file_path();
 void do_log(MyLogger *mylogger, logLevel level, const char *fmt, int num_args, ...);
 
 #define ACQUIRE_LOCK_ONCE(f) if (!hold_lock) { flock( fileno(f), LOCK_EX ); hold_lock = true; }
