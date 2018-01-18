@@ -78,6 +78,7 @@ Setting the level can be done at construction time or run time
      $log->set_level( XS::Logger::WARN_LOG_LEVEL() ); # only warnings, error and fatal events are logged
 
 # LICENSE
+   ...
 
 # AUTHOR
 

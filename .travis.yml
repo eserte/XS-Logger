@@ -22,11 +22,11 @@ install:
     - export AUTOMATED_TESTING=1 HARNESS_TIMER=1 AUTHOR_TESTING=0 RELEASE_TESTING=0
     - cpan-install --coverage   # installs coverage prereqs, if enabled
 
-script: "dzil test"
+#script: "dzil test"
 
-branches:
-  only:
-    - master
+# branches:
+#   only:
+#     - master
 notifications:
   recipients:
     - atoomic@cpan.org
