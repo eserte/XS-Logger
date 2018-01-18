@@ -14,4 +14,6 @@ use Test2::Plugin::NoWarnings;
 # make sure the module compiles
 ok eval { require XS::Logger; 1 }, "load XS::Logger" or diag $@;
 
+is XS::Logger::_loaded(), 1, "XS BOOT";
+
 done_testing;
