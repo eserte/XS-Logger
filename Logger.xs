@@ -191,14 +191,12 @@ CODE:
 
 	sv_setiv(obj, PTR2IV(mylogger)); /* get a pointer to our malloc object */
 	SvREADONLY_on(obj);
-
-	//XSRETURN_EMPTY;
 }
 OUTPUT:
 	RETVAL
 
 
-int
+void
 xlog_loggers(...)
 ALIAS:
 	    XS::Logger::info                 = 1
@@ -237,8 +235,7 @@ CODE:
             level = LOG_DEBUG;
          break;
          default:
-            level = LOG_DISABLE; /* maybe use LOG_DISABLE there */
-
+            level = LOG_DISABLE;
      }
 
 	 /* check if called as function or method call */
@@ -299,22 +296,18 @@ CODE:
       		//PerlIO_printf( PerlIO_stderr(), "# something %d\n", 42 );
  			// can switch on the number of arguments
       		do_log( mylogger, level, fmt, items - args_start_at,
-      									  targs[0], targs[1], targs[2], targs[3], targs[4],
-      									  targs[5], targs[6], targs[7], targs[8], targs[9]
+					targs[0], targs[1], targs[2], targs[3], targs[4],
+      				targs[5], targs[6], targs[7], targs[8], targs[9]
       		);
 
      	} else {
      		croak("Too many args to the caller (max=10).");
      	}
-
      }
 
-
-     RETVAL = level;
+     /* no need to return anything there */
+     XSRETURN_EMPTY;
 }
-OUTPUT:
-	RETVAL
-
 
 SV*
 xlog_getters(self)
