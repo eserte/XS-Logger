@@ -24,13 +24,14 @@ install:
 
 script: "dzil test"
 
-# branches:
-#   only:
-#     - master
-# notifications:
-#   recipients:
-#     - atoomic@cpan.org
-#   email:
-#     on_success: change
-#     on_failure: always
+branches:
+  only:
+    - master
+notifications:
+  recipients:
+    - atoomic@cpan.org
+  email:
+    on_success: change
+    on_failure: always
+
 #env:
