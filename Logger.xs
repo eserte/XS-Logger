@@ -24,7 +24,7 @@ static const char *LOG_LEVEL_NAMES[] = {
 
 static const char *END_COLOR = "\x1b[0m";
 static const char *LEVEL_COLORS[] = {
-  "\x1b[94m", "\x1b[36m", "\x1b[33m", "\x1b[31m", "\x1b[31m", "\x1b[35m"
+  "\x1b[94m", "\x1b[36m", "\x1b[33m", "\x1b[1;31m", "\x1b[1;35m" /* "\x1b[1;35m"  */
 };
 
 /* c internal functions */
@@ -81,18 +81,16 @@ do_log(MyLogger *mylogger, logLevel level, const char *fmt, int num_args, ...) {
 		/* write the message */
 		/* header: [timestamp tz] pid LEVEL */
 		if ( mylogger && mylogger->use_color ) {
-			fprintf( fhandle, "[%s % 03d%02d] %d %s%-5s%s %s:%d: ",
+			fprintf( fhandle, "[%s % 03d%02d] %d %s%-5s%s: ",
 				 buf, (int) lt.tm_gmtoff / 3600, ( lt.tm_gmtoff % 3600) / 60,
 				 (int) getpid(),
-				 LEVEL_COLORS[level], LOG_LEVEL_NAMES[level], END_COLOR,
-				 path, level
+				 LEVEL_COLORS[level], LOG_LEVEL_NAMES[level], END_COLOR
 			);
 		} else {
-			fprintf( fhandle, "[%s % 03d%02d] %d %-5s %s:%d: ",
+			fprintf( fhandle, "[%s % 03d%02d] %d %-5s: ",
 				 buf, (int) lt.tm_gmtoff / 3600, ( lt.tm_gmtoff % 3600) / 60,
 				 (int) getpid(),
-				 LOG_LEVEL_NAMES[level],
-				 path, level
+				 LOG_LEVEL_NAMES[level]
 			);
 		}
 

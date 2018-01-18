@@ -1,62 +1,129 @@
-use strict;
-use Test::More;
+#!/bin/env perl
 
-# make sure the module compiles
-BEGIN { use_ok('XS::Logger') }
+use strict;
+use warnings;
+
+use Test2::Bundle::Extended;
+use Test2::Tools::Explain;
+use Test2::Plugin::NoWarnings;
+
+use Capture::Tiny ':all';
+use File::Slurp qw{read_file};
+
+use File::Temp;
+
+use XS::Logger ();
+
+use FindBin;
+use lib "$FindBin::Bin/lib";
+
+use Test::XSLogger qw{:all};
+
+my $tempfile = File::Temp->newdir( 'DIR' => '/tmp', 'TEMPLATE' => 'xslogger-test.XXXXX', UNLINK => 1 );
+my $tmpdir = $tempfile->dirname();
+
+ok -d $tmpdir, "got a tmpdir";
+
+my $logfile = q{/tmp/my-test};    # hard coded for now
 
 # make sure holy() is in the current namespace
 {
-    no strict 'refs';
+    note "Testing function calls XS::Logger::*something*()";
 
-    {
-        #our $XS::Logger::PATH_FILE = "/fdsfdsfsdfsd"; # // default_value
+    #our $XS::Logger::PATH_FILE = "/fdsfdsfsdfsd"; # // default_value
 
-        is( XS::Logger::info(),                       1, "info" );
-        is( XS::Logger::info("a simple information"), 1, "info" );
-        is( XS::Logger::info( "something to eat - %s %s", "cherry", "pie" ), 1, "info" );
+    XS::Logger::info();
+    logfile_last_line_like( $logfile, level => 'INFO', color => 0, msg => '', test => 'info without args' );
 
-        is( XS::Logger::loggers(), 5, "log disable level" );
+    XS::Logger::info("a simple information");
+    logfile_last_line_like( $logfile, level => 'INFO', color => 0, msg => 'a simple information' );
 
-        is( XS::Logger::info(),  1, "info" );
-        is( XS::Logger::warn(),  2, "warn" );
-        is( XS::Logger::error(), 3, "error" );
-        is( XS::Logger::die(),   3, "die" );
-        is( XS::Logger::panic(), 4, "panic" );
-        is( XS::Logger::fatal(), 4, "fatal" );
-        is( XS::Logger::debug(), 0, "debug" );
+    XS::Logger::info( "something to eat - %s %s", "cherry", "pie" );
+    logfile_last_line_like( $logfile, level => 'INFO', color => 0, msg => 'something to eat - cherry pie' );
+
+    foreach my $level (qw{info warn error die panic fatal debug}) {
+        my $expect_level = uc($level);
+        $expect_level = 'ERROR' if $level eq 'die';     # FIXME maybe to change
+        $expect_level = 'FATAL' if $level eq 'panic';
+
+        eval qq{XS::Logger::$level(); 1} or die $@;
+        logfile_last_line_like( $logfile, level => $expect_level, color => 0, msg => '' );
+
+        my $msg = "my $level message";
+        eval qq{XS::Logger::${level}('${msg}'); 1} or die $@;
+        logfile_last_line_like( $logfile, level => $expect_level, color => 0, msg => $msg );
     }
+}
+
+{
+    note "Testing object XS::Logger->new->log_something";
 
     my $logger = XS::Logger->new( { path => "/ddwdewf", color => 0 } );
 
-    is( $logger->info(),  1, "info" );
-    is( $logger->warn(),  2, "warn" );
-    is( $logger->error(), 3, "error" );
-    is( $logger->die(),   3, "die" );
-    is( $logger->panic(), 4, "panic" );
-    is( $logger->fatal(), 4, "fatal" );
-    is( $logger->debug(), 0, "debug" );
+    $logger->info();
+    $logger->warn();
+    $logger->error();
+    $logger->die();
+    $logger->panic();
+    $logger->fatal();
+    $logger->debug();
+
+    foreach my $level (qw{info warn error die panic fatal debug}) {
+        my $expect_level = uc($level);
+        $expect_level = 'ERROR' if $level eq 'die';     # FIXME maybe to change
+        $expect_level = 'FATAL' if $level eq 'panic';
+
+        eval { $logger->can($level)->(); 1 } or die $@;
+        logfile_last_line_like( $logfile, level => $expect_level, color => 0, msg => '' );
+
+        my $msg = "this is a BW $level message";
+        eval { $logger->can($level)->($msg); 1 } or die $@;
+        logfile_last_line_like( $logfile, level => $expect_level, color => 0, msg => $msg );
+    }
 
 }
 
 {
-    my $logger = XS::Logger->new;
+    my $logger = XS::Logger->new( { color => 1 } );
 
-    is( $logger->info("one info [no newline]"),     1, "info" );
-    is( $logger->info("one info [with newline]\n"), 1, "info" );
-    is( $logger->warn( "a warning with integer '%d'", 42 ), 2, "warn" );
-    is( $logger->error("one error"),       3, "error" );
-    is( $logger->die("this is a die"),     3, "die" );
-    is( $logger->panic("this is a panic"), 4, "panic" );
-    is( $logger->fatal("this is fatal"),   4, "fatal" );
-    is( $logger->debug( "my debug message %s", "whatever" ), 0, "debug" );
+    $logger->info("one info no newline");
+    like get_logfile_last_line($logfile), qr{one info no newline\n$}, "one info no newline";
 
-    is( $logger->info( "one %d two %d three %d", 1, 2, 3 ), 1, "%d works" );
-    is( $logger->info( "d %d, s %s, d %d, s %s", -42, "banana", 404, "apple" ), 1, "mix of %d and %s" );
+    $logger->info("one info with newline\n");
+    like get_logfile_last_line($logfile), qr{one info with newline\n$}, "one info with newline";
 
-    is( $logger->info( "decimal '%f' <-- ", 1.56789 ), 1, "%f works --- not working for now" );
+    $logger->warn( "a warning with integer '%d'", 42 );
+    logfile_last_line_like( $logfile, level => 'WARN', color => 1, msg => "a warning with integer '42'" );
+
+    foreach my $level (qw{info warn error die panic fatal debug}) {
+        my $expect_level = uc($level);
+        $expect_level = 'ERROR' if $level eq 'die';     # FIXME maybe to change
+        $expect_level = 'FATAL' if $level eq 'panic';
+
+        my $msg = "this is a colored $level message";
+        eval { $logger->can($level)->( $logger, $msg ); 1 } or die $@;
+        logfile_last_line_like( $logfile, level => $expect_level, color => 1, msg => $msg );
+    }
+
+    $logger->debug( "my debug message %s", "whatever" );
+    logfile_last_line_like( $logfile, level => 'DEBUG', color => 1, msg => "my debug message whatever" );
+
+    $logger->info( "one %d two %d three %d", 1, 2, 3 );
+    logfile_last_line_like( $logfile, level => 'INFO', color => 1, msg => "one 1 two 2 three 3" );
+
+    $logger->info( "d %d, s %s, d %d, s %s", -42, "banana", 404, "apple" );
+    logfile_last_line_like( $logfile, level => 'INFO', color => 1, msg => "d -42, s banana, d 404, s apple" );
+
+    todo "Floating numbers not implemented correctly" => sub {
+        $logger->info( "decimal '%f'", 1.56789 );
+        logfile_last_line_like( $logfile, level => 'INFO', color => 1, msg => "decimal '1.56789'" );
+    };
 
     foreach my $max ( 1 .. 10 ) {
-        is( $logger->debug( "$max + 1 parameters " . ( "%d, " x $max ), ( 1 .. $max ) ), 0, "should not fail with $max + 1 argument" );
+        ok eval { $logger->debug( "$max + 1 parameters || " . ( "%d, " x $max ), ( 1 .. $max ) ); 1 }, "should not fail with $max + 1 argument";
+
+        my $end = sprintf( "%d, " x $max, 1 .. $max );
+        like get_logfile_last_line($logfile), qr{|| $end\n$}, "$end";
     }
 
     foreach my $max ( 11 .. 15 ) {
@@ -66,14 +133,8 @@ BEGIN { use_ok('XS::Logger') }
         like $error, qr{^Too many args to the caller};
     }
 
-    is( $logger->info(1234), 1, "info using an integer instead of format 1234" );
-
+    $logger->info(1234);
+    logfile_last_line_like( $logfile, level => 'INFO', color => 1, msg => "1234", test => "info using an integer instead of format 1234" );
 }
 
-done_testing;
-__END__
-
-TODO:
-- use text file
-- use GV for global filename
-- switch test to test2
+done_testing;    # safe with Test2
