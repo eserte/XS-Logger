@@ -1,5 +1,5 @@
-* add pod/doc
+
+* implement levels
 * implement die, fatal...
-* switch to dzilla
-* pod to mdoc
-* testcover
+* plug testcover
+* plug continuous integration travis

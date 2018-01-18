@@ -178,6 +178,11 @@ CODE:
 			mylogger->use_color = (bool) SvIV(*svp);
 		}
 
+		if ( svp = hv_fetchs(opts, "level", FALSE) ) {
+			if (!SvIOK(*svp)) croak("invalid log level: should be one integer");
+			mylogger->level = (logLevel) SvIV(*svp);
+		}
+
 		if ( (svp = hv_fetchs(opts, "logfile", FALSE)) || (svp = hv_fetchs(opts, "path", FALSE)) ) {
 			STRLEN len;
 			char *src;
@@ -315,6 +320,7 @@ xlog_getters(self)
 ALIAS:
      XS::Logger::get_pid               = 1
      XS::Logger::use_color             = 2
+     XS::Logger::get_level             = 3
 PREINIT:
 	MyLogger* mylogger;
 CODE:
@@ -324,11 +330,14 @@ CODE:
      switch (ix) {
         case 1:
              RETVAL = newSViv( mylogger->pid );
-         break;
+        break;
         case 2:
              RETVAL = newSViv( mylogger->use_color );
-         break;
-         default:
+        break;
+        case 3:
+             RETVAL = newSViv( (int) mylogger->level );
+        break;
+        default:
              XSRETURN_EMPTY;
 
      }
@@ -371,6 +380,13 @@ BOOT:
 
 	stash = gv_stashpvn("XS::Logger", 10, TRUE);
 	newCONSTSUB(stash, "_loaded", newSViv(1) );
+
+	newCONSTSUB(stash, "DEBUG_LOG_LEVEL", newSViv( LOG_DEBUG ) );
+	newCONSTSUB(stash, "INFO_LOG_LEVEL", newSViv( LOG_INFO ) );
+	newCONSTSUB(stash, "WARN_LOG_LEVEL", newSViv( LOG_WARN ) );
+	newCONSTSUB(stash, "ERROR_LOG_LEVEL", newSViv( LOG_ERROR ) );
+	newCONSTSUB(stash, "FATAL_LOG_LEVEL", newSViv( LOG_FATAL ) );
+	newCONSTSUB(stash, "DISABLE_LOG_LEVEL", newSViv( LOG_DISABLE ) );
 
 	sv = get_sv("XS::Logger::PATH_FILE", GV_ADD|GV_ADDMULTI);
 	if ( ! SvPOK(sv) ) { /* preserve any value set before loading the module */
