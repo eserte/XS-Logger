@@ -344,7 +344,14 @@ PPCODE:
 BOOT:
 {
 	HV *stash;
+	SV *sv;
 
 	stash = gv_stashpvn("XS::Logger", 10, TRUE);
 	newCONSTSUB(stash, "_loaded", newSViv(1) );
+
+	sv = get_sv("XS::Logger::PATH_FILE", GV_ADD|GV_ADDMULTI);
+	if ( ! SvPOK(sv) ) { /* preserve any value set before loading the module */
+		SvREFCNT_inc(sv);
+		sv_setpv(sv, DEFAULT_LOG_FILE);
+	}
 }

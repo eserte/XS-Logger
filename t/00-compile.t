@@ -15,5 +15,9 @@ use Test2::Plugin::NoWarnings;
 ok eval { require XS::Logger; 1 }, "load XS::Logger" or diag $@;
 
 is XS::Logger::_loaded(), 1, "XS BOOT";
+is $XS::Logger::PATH_FILE, "/var/log/xslogger.log", "default PATH_FILE";
+
+$XS::Logger::PATH_FILE = "another/path";    # avoid use once warning
+is $XS::Logger::PATH_FILE, "another/path", "can overwrite path";
 
 done_testing;
