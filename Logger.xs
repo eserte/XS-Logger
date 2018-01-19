@@ -51,7 +51,7 @@ do_log(MyLogger *mylogger, logLevel level, const char *fmt, int num_args, ...) {
 	char buf[32];
 	bool has_logger_object = true;
 	bool hold_lock = false;
-
+	pid_t pid;
 
 	localtime_r(&t, &lt);
 
@@ -69,12 +69,18 @@ do_log(MyLogger *mylogger, logLevel level, const char *fmt, int num_args, ...) {
 			path = get_default_file_path();
 		}
 
+		pid = getpid();
+		if ( mylogger->pid && mylogger->pid != pid ) {
+			if (mylogger->fhandle) close(mylogger->fhandle);
+			mylogger->fhandle = NULL;
+		}
+
 		if ( ! mylogger->fhandle ) {
 			/* FIXME -- probably do not use PerlIO layer at all */
 			if ( (fhandle = fopen( path, "a" )) == NULL ) /* open in append mode */
 				croak("Failed to open file \"%s\"", path);
 			mylogger->fhandle = fhandle; /* save the fhandle for future reuse */
-			mylogger->pid = getpid(); /* store the pid which open the file */
+			mylogger->pid = pid; /* store the pid which open the file */
 
 			ACQUIRE_LOCK_ONCE(fhandle); /* get a lock before moving to the end */
 			fseek(fhandle, 0, SEEK_END);
@@ -104,13 +110,13 @@ do_log(MyLogger *mylogger, logLevel level, const char *fmt, int num_args, ...) {
 		if ( mylogger && mylogger->use_color ) {
 			fprintf( fhandle, "[%s % 03d%02d] %d %s%-5s%s: ",
 				 buf, (int) lt.tm_gmtoff / 3600, ( lt.tm_gmtoff % 3600) / 60,
-				 (int) getpid(),
+				 (int) pid,
 				 LEVEL_COLORS[level], LOG_LEVEL_NAMES[level], END_COLOR
 			);
 		} else {
 			fprintf( fhandle, "[%s % 03d%02d] %d %-5s: ",
 				 buf, (int) lt.tm_gmtoff / 3600, ( lt.tm_gmtoff % 3600) / 60,
-				 (int) getpid(),
+				 (int) pid,
 				 LOG_LEVEL_NAMES[level]
 			);
 		}
