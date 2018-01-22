@@ -26,6 +26,12 @@ __END__
 
 XS::Logger - basic logger using XS
 
+=begin HTML
+
+<p><img src="https://travis-ci.org/atoomic/XS-Logger.svg?branch=released" width="81" height="18" alt="Travis CI" /></p>
+
+=end HTML
+
 =head1 SYNOPSIS
 
     use XS::Logger;
@@ -98,4 +104,5 @@ Setting the level can be done at construction time or run time
 
 
 =head1 LICENSE
+
    ...

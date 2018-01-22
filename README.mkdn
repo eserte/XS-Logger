@@ -4,7 +4,7 @@ XS::Logger - a basic logger implemented in XS
 
 # VERSION
 
-version 0.002
+version 0.003
 
 # SYNOPSIS
 
