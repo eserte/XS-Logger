@@ -71,7 +71,7 @@ do_log(MyLogger *mylogger, logLevel level, const char *fmt, int num_args, ...) {
 
 		pid = getpid();
 		if ( mylogger->pid && mylogger->pid != pid ) {
-			if (mylogger->fhandle) close(mylogger->fhandle);
+			if (mylogger->fhandle) fclose(mylogger->fhandle);
 			mylogger->fhandle = NULL;
 		}
 
