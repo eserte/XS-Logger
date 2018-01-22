@@ -100,6 +100,7 @@ do_log(MyLogger *mylogger, logLevel level, const char *fmt, int num_args, ...) {
 
 	if ( fhandle ) {
 		va_list args;
+		int abs_gmtoff = lt.tm_gmtoff >= 0 ? lt.tm_gmtoff : -1 * lt.tm_gmtoff;
 
 		if (num_args) va_start(args, num_args);
 
@@ -108,14 +109,19 @@ do_log(MyLogger *mylogger, logLevel level, const char *fmt, int num_args, ...) {
 		/* write the message */
 		/* header: [timestamp tz] pid LEVEL */
 		if ( mylogger && mylogger->use_color ) {
-			fprintf( fhandle, "[%s % 03d%02d] %d %s%-5s%s: ",
-				 buf, (int) lt.tm_gmtoff / 3600, ( lt.tm_gmtoff % 3600) / 60,
+			fprintf( fhandle, "[%s %s%02d%02d] %d %s%-5s%s: ",
+				 buf,
+				lt.tm_gmtoff >= 0 ? "+" : "-",
+				 (int) abs_gmtoff / 3600,
+				( abs_gmtoff % 3600) / 60,
 				 (int) pid,
 				 LEVEL_COLORS[level], LOG_LEVEL_NAMES[level], END_COLOR
 			);
 		} else {
-			fprintf( fhandle, "[%s % 03d%02d] %d %-5s: ",
-				 buf, (int) lt.tm_gmtoff / 3600, ( lt.tm_gmtoff % 3600) / 60,
+			fprintf( fhandle, "[%s %s%02d%02d] %d %-5s: ",
+				 buf,
+				 lt.tm_gmtoff >= 0 ? "+" : "-",
+				 (int) abs_gmtoff / 3600, ( abs_gmtoff % 3600) / 60,
 				 (int) pid,
 				 LOG_LEVEL_NAMES[level]
 			);

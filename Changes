@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+* fix timezone display
+
 0.002     2018-01-22 16:34:26-06:00 America/Chicago
 
 * minor C adjustments
