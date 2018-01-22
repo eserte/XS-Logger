@@ -179,12 +179,12 @@ CODE:
 	mylogger->use_color = true; /* maybe use a GV from the stash to set the default value */
 
 	if ( opts ) {
-		if ( svp = hv_fetchs(opts, "color", FALSE) ) {
+		if ( (svp = hv_fetchs(opts, "color", FALSE)) ) {
 			if (!SvIOK(*svp)) croak("invalid color option value: should be a boolean 1/0");
 			mylogger->use_color = (bool) SvIV(*svp);
 		}
 
-		if ( svp = hv_fetchs(opts, "level", FALSE) ) {
+		if ( (svp = hv_fetchs(opts, "level", FALSE)) ) {
 			if (!SvIOK(*svp)) croak("invalid log level: should be one integer");
 			mylogger->level = (logLevel) SvIV(*svp);
 		}
