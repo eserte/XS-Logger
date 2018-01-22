@@ -7,6 +7,15 @@
 
 #include <perl.h>
 
+#ifndef false
+#	define false 0
+#endif
+
+#ifndef true
+#	define true 1
+#endif
+
+
 /* typedef enum { xfalse, xtrue } xbool; */
 
 typedef enum {
