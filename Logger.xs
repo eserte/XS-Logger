@@ -109,20 +109,20 @@ do_log(MyLogger *mylogger, logLevel level, const char *fmt, int num_args, ...) {
 		/* write the message */
 		/* header: [timestamp tz] pid LEVEL */
 		if ( mylogger && mylogger->use_color ) {
-			fprintf( fhandle, "[%s %s%02d%02d] %d %s%-5s%s: ",
+			fprintf( fhandle, "[%s %s%02d%02d] %u %s%-5s%s: ",
 				 buf,
 				lt.tm_gmtoff >= 0 ? "+" : "-",
 				 (int) abs_gmtoff / 3600,
 				( abs_gmtoff % 3600) / 60,
-				 (int) pid,
+				 (unsigned int) pid,
 				 LEVEL_COLORS[level], LOG_LEVEL_NAMES[level], END_COLOR
 			);
 		} else {
-			fprintf( fhandle, "[%s %s%02d%02d] %d %-5s: ",
+			fprintf( fhandle, "[%s %s%02d%02d] %u %-5s: ",
 				 buf,
 				 lt.tm_gmtoff >= 0 ? "+" : "-",
 				 (int) abs_gmtoff / 3600, ( abs_gmtoff % 3600) / 60,
-				 (int) pid,
+				 (unsigned int) pid,
 				 LOG_LEVEL_NAMES[level]
 			);
 		}
