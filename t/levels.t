@@ -59,7 +59,8 @@ sub check_lines_for_level {
 
     my $tmp = File::Temp->new(
         'DIR'      => '/tmp',
-        'TEMPLATE' => 'xslogger-test.XXXXX'
+        'TEMPLATE' => 'xslogger-test.XXXXX',
+        'EXLOCK'   => 0,
     );
     local $XS::Logger::PATH_FILE = $tmp->filename();
 

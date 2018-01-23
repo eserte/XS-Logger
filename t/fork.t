@@ -17,7 +17,7 @@ use lib "$FindBin::Bin/lib";
 use Test::XSLogger qw{:all};
 
 {
-    my $tmp = File::Temp->new( 'DIR' => '/tmp', 'TEMPLATE' => 'xslogger-test.XXXXX' );
+    my $tmp = File::Temp->new( 'DIR' => '/tmp', 'TEMPLATE' => 'xslogger-test.XXXXX', 'EXLOCK' => 0 );
     my $logfile = $tmp->filename;
 
     my $logger = XS::Logger->new( { path => $logfile } );
